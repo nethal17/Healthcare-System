@@ -37,7 +37,7 @@ public class User {
     
     private boolean active = true;
     
-    private String qrCode; // Base64 encoded QR code image
+    private String healthCardId; // Reference to HealthCard
     
     private LocalDateTime createdAt;
     

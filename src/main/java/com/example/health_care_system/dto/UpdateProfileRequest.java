@@ -1,6 +1,5 @@
 package com.example.health_care_system.dto;
 
-import com.example.health_care_system.model.UserRole;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -10,14 +9,10 @@ import java.time.LocalDate;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserDTO {
-    private String id;
+public class UpdateProfileRequest {
     private String name;
-    private String email;
-    private UserRole role;
+    private String contactNumber;
     private LocalDate dateOfBirth;
     private String gender;
     private String address;
-    private String contactNumber;
-    private HealthCardDTO healthCard; // User's health card
 }

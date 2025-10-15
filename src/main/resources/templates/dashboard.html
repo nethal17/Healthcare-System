@@ -11,8 +11,8 @@
             theme: {
                 extend: {
                     colors: {
-                        primary: '#667eea',
-                        secondary: '#764ba2',
+                        primary: '#3b82f6',
+                        secondary: '#2563eb',
                     }
                 }
             }
@@ -21,57 +21,57 @@
 </head>
 <body class="bg-gray-50">
     <!-- Navbar -->
-    <nav class="bg-gray-800 shadow-lg">
+    <nav class="bg-gradient-to-r from-blue-500 to-blue-600 shadow-lg">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-16">
                 <!-- Logo -->
                 <div class="flex items-center">
-                    <a href="#" class="flex items-center text-white text-xl font-bold">
-                        <i class="fas fa-hospital mr-2"></i>
-                        Healthcare System
+                    <a href="#" class="flex items-center text-white text-xl font-bold hover:opacity-90 transition duration-200">
+                        <i class="fas fa-hospital-user text-2xl mr-3"></i>
+                        <span>Healthcare System</span>
                     </a>
                 </div>
 
                 <!-- Menu Items -->
-                <div class="hidden md:flex items-center space-x-4">
-                    <a th:href="@{/dashboard}" class="text-white bg-gray-700 px-3 py-2 rounded-md text-sm font-medium">
-                        <i class="fas fa-home mr-1"></i> Dashboard
+                <div class="hidden md:flex items-center space-x-2">
+                    <a th:href="@{/dashboard}" class="text-white bg-white bg-opacity-20 px-4 py-2 rounded-lg text-sm font-semibold backdrop-blur-sm">
+                        <i class="fas fa-home mr-2"></i> Dashboard
                     </a>
-                    <a th:if="${user != null && user.role.name() == 'PATIENT'}" href="#" class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">
-                        <i class="fas fa-calendar-check mr-1"></i> Appointments
+                    <a th:if="${user != null && user.role.name() == 'PATIENT'}" href="#" class="text-white hover:bg-white hover:bg-opacity-20 px-4 py-2 rounded-lg text-sm font-medium transition duration-200">
+                        <i class="fas fa-calendar-check mr-2"></i> Appointments
                     </a>
-                    <a th:if="${user != null && user.role.name() == 'DOCTOR'}" href="#" class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">
-                        <i class="fas fa-user-injured mr-1"></i> Patients
+                    <a th:if="${user != null && user.role.name() == 'DOCTOR'}" href="#" class="text-white hover:bg-white hover:bg-opacity-20 px-4 py-2 rounded-lg text-sm font-medium transition duration-200">
+                        <i class="fas fa-user-injured mr-2"></i> Patients
                     </a>
-                    <a th:if="${user != null && user.role.name() == 'ADMIN'}" href="#" class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">
-                        <i class="fas fa-users-cog mr-1"></i> Manage Users
+                    <a th:if="${user != null && user.role.name() == 'ADMIN'}" href="#" class="text-white hover:bg-white hover:bg-opacity-20 px-4 py-2 rounded-lg text-sm font-medium transition duration-200">
+                        <i class="fas fa-users-cog mr-2"></i> Manage Users
                     </a>
-                    <a th:if="${user != null && user.role.name() == 'STAFF'}" th:href="@{/staff/scanner}" class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">
-                        <i class="fas fa-qrcode mr-1"></i> Scan QR Code
+                    <a th:if="${user != null && user.role.name() == 'STAFF'}" th:href="@{/staff/scanner}" class="text-white hover:bg-white hover:bg-opacity-20 px-4 py-2 rounded-lg text-sm font-medium transition duration-200">
+                        <i class="fas fa-qrcode mr-2"></i> Scan QR Code
                     </a>
                 </div>
 
                 <!-- User Info -->
                 <div th:if="${user != null}" class="flex items-center space-x-4">
-                    <div class="flex items-center space-x-3">
+                    <a th:href="@{/profile}" class="flex items-center space-x-3 hover:bg-white hover:bg-opacity-10 px-3 py-2 rounded-lg transition duration-200">
                         <!-- Avatar -->
-                        <div class="w-10 h-10 rounded-full bg-gradient-to-r from-primary to-secondary flex items-center justify-center text-white font-bold">
+                        <div class="w-11 h-11 rounded-full bg-white bg-opacity-20 flex items-center justify-center text-white font-bold text-lg backdrop-blur-sm border-2 border-white border-opacity-30">
                             <span th:text="${#strings.substring(user.name, 0, 1)}">U</span>
                         </div>
                         <!-- User Details -->
                         <div class="hidden lg:block">
-                            <div class="text-sm font-medium text-white" th:text="${user.name}">User Name</div>
-                            <div class="text-xs text-gray-400">
-                                <span th:if="${user.role.name() == 'PATIENT'}" class="inline-block bg-green-500 text-white px-2 py-1 rounded-full text-xs">Patient</span>
-                                <span th:if="${user.role.name() == 'DOCTOR'}" class="inline-block bg-blue-500 text-white px-2 py-1 rounded-full text-xs">Doctor</span>
-                                <span th:if="${user.role.name() == 'ADMIN'}" class="inline-block bg-red-500 text-white px-2 py-1 rounded-full text-xs">Admin</span>
-                                <span th:if="${user.role.name() == 'STAFF'}" class="inline-block bg-purple-500 text-white px-2 py-1 rounded-full text-xs">Staff</span>
+                            <div class="text-sm font-semibold text-white" th:text="${user.name}">User Name</div>
+                            <div class="text-xs">
+                                <span th:if="${user.role.name() == 'PATIENT'}" class="inline-block bg-green-500 text-white px-2.5 py-0.5 rounded-full text-xs font-medium">Patient</span>
+                                <span th:if="${user.role.name() == 'DOCTOR'}" class="inline-block bg-cyan-500 text-white px-2.5 py-0.5 rounded-full text-xs font-medium">Doctor</span>
+                                <span th:if="${user.role.name() == 'ADMIN'}" class="inline-block bg-red-500 text-white px-2.5 py-0.5 rounded-full text-xs font-medium">Admin</span>
+                                <span th:if="${user.role.name() == 'STAFF'}" class="inline-block bg-purple-500 text-white px-2.5 py-0.5 rounded-full text-xs font-medium">Staff</span>
                             </div>
                         </div>
-                    </div>
+                    </a>
                     <!-- Logout Button -->
-                    <a th:href="@{/logout}" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition duration-200">
-                        <i class="fas fa-sign-out-alt mr-1"></i> Logout
+                    <a th:href="@{/logout}" class="bg-red-500 hover:bg-red-600 text-white px-5 py-2 rounded-lg text-sm font-semibold transition duration-200 shadow-md">
+                        <i class="fas fa-sign-out-alt mr-2"></i> Logout
                     </a>
                 </div>
             </div>
@@ -81,9 +81,10 @@
     <!-- Main Content -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <!-- Welcome Section -->
-        <div class="bg-gradient-to-r from-primary to-secondary rounded-2xl shadow-lg p-8 mb-8 text-white">
-            <h2 class="text-3xl font-bold mb-2">
-                <i class="fas fa-hand-wave mr-2"></i> Welcome, <span th:text="${user.name}">User</span>!
+        <div class="bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl shadow-xl p-10 mb-8 text-white border border-blue-400">
+            <h2 class="text-4xl font-bold mb-3 flex items-center">
+                <i class="fas fa-hand-wave mr-3 text-yellow-300"></i> 
+                <span>Welcome, <span th:text="${user.name}">User</span>!</span>
             </h2>
             <p class="text-lg opacity-90">
                 <span th:if="${user.role.name() == 'PATIENT'}">
@@ -101,55 +102,56 @@
             </p>
         </div>
 
-        <!-- User Information Card -->
-        <div class="bg-white rounded-2xl shadow-lg overflow-hidden mb-8">
-            <div class="bg-primary text-white px-6 py-4">
-                <h5 class="text-xl font-bold"><i class="fas fa-user-circle mr-2"></i> Your Profile Information</h5>
+        <!-- Health Card Display (for PATIENT users) -->
+        <div th:if="${user != null && user.role.name() == 'PATIENT' && user.healthCard != null}" class="bg-white rounded-2xl shadow-xl overflow-hidden mb-8 border border-gray-100">
+            <div class="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-5">
+                <h5 class="text-2xl font-bold flex items-center">
+                    <i class="fas fa-id-card mr-3 text-3xl"></i>
+                    <span>Your Health Card</span>
+                </h5>
             </div>
             <div class="p-6">
-                <!-- Profile layout for PATIENT users (with QR Code) -->
-                <div th:if="${user.role.name() == 'PATIENT'}" class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div class="md:col-span-2 space-y-6">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div class="space-y-3">
-                                <p class="text-gray-700">
-                                    <strong><i class="fas fa-user text-primary mr-2"></i> Name:</strong> 
-                                    <span th:text="${user.name}"></span>
-                                </p>
-                                <p class="text-gray-700">
-                                    <strong><i class="fas fa-envelope text-primary mr-2"></i> Email:</strong> 
-                                    <span th:text="${user.email}"></span>
-                                </p>
-                                <p th:if="${user.contactNumber}" class="text-gray-700">
-                                    <strong><i class="fas fa-phone text-primary mr-2"></i> Contact:</strong> 
-                                    <span th:text="${user.contactNumber}"></span>
-                                </p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- Health Card Info -->
+                    <div class="md:col-span-2 space-y-4">
+                        <!-- User Name on Card -->
+                        <div class="bg-gradient-to-r from-primary to-secondary rounded-lg p-4 text-white">
+                            <h3 class="text-2xl font-bold" th:text="${user.name}">User Name</h3>
+                            <p class="text-sm opacity-90" th:text="${user.healthCard.userEmail}">user@email.com</p>
+                        </div>
+                        
+                        <!-- Card Details -->
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="bg-gray-50 rounded-lg p-3">
+                                <p class="text-xs text-gray-500 mb-1">Card ID</p>
+                                <p class="font-mono font-bold text-gray-800" th:text="${user.healthCard.cardID}">HC-2025-000000</p>
                             </div>
-                            <div class="space-y-3">
-                                <p th:if="${user.dateOfBirth}" class="text-gray-700">
-                                    <strong><i class="fas fa-calendar text-primary mr-2"></i> Date of Birth:</strong> 
-                                    <span th:text="${#temporals.format(user.dateOfBirth, 'dd-MM-yyyy')}"></span>
-                                </p>
-                                <p th:if="${user.gender}" class="text-gray-700">
-                                    <strong><i class="fas fa-venus-mars text-primary mr-2"></i> Gender:</strong> 
-                                    <span th:text="${user.gender}"></span>
-                                </p>
-                                <p th:if="${user.address}" class="text-gray-700">
-                                    <strong><i class="fas fa-map-marker-alt text-primary mr-2"></i> Address:</strong> 
-                                    <span th:text="${user.address}"></span>
-                                </p>
+                            <div class="bg-gray-50 rounded-lg p-3">
+                                <p class="text-xs text-gray-500 mb-1">Status</p>
+                                <span th:if="${user.healthCard.status.name() == 'ACTIVE'}" class="inline-block bg-green-500 text-white px-3 py-1 rounded-full text-xs font-semibold">
+                                    <i class="fas fa-check-circle mr-1"></i> ACTIVE
+                                </span>
+                                <span th:unless="${user.healthCard.status.name() == 'ACTIVE'}" class="inline-block bg-red-500 text-white px-3 py-1 rounded-full text-xs font-semibold" th:text="${user.healthCard.status}">
+                                    INACTIVE
+                                </span>
+                            </div>
+                            <div class="bg-gray-50 rounded-lg p-3">
+                                <p class="text-xs text-gray-500 mb-1">Issue Date</p>
+                                <p class="font-semibold text-gray-800" th:text="${#temporals.format(user.healthCard.issueDate, 'dd MMM yyyy')}">01 Jan 2025</p>
+                            </div>
+                            <div class="bg-gray-50 rounded-lg p-3">
+                                <p class="text-xs text-gray-500 mb-1">Expiry Date</p>
+                                <p class="font-semibold text-gray-800" th:text="${#temporals.format(user.healthCard.expiryDate, 'dd MMM yyyy')}">01 Jan 2030</p>
                             </div>
                         </div>
                     </div>
-                    <!-- QR Code Section (Only for PATIENT) -->
-                    <div class="flex flex-col items-center justify-center border-l border-gray-200 pl-6">
-                        <h6 class="text-lg font-semibold text-gray-800 mb-3">
-                            <i class="fas fa-qrcode text-primary mr-2"></i>Your QR Code
-                        </h6>
+                    
+                    <!-- QR Code -->
+                    <div class="flex flex-col items-center justify-center">
                         <div class="bg-white p-4 rounded-lg border-2 border-primary shadow-md">
-                            <img th:if="${user.qrCode}" th:src="${user.qrCode}" alt="User QR Code" 
-                                 class="w-48 h-48 object-contain">
-                            <div th:unless="${user.qrCode}" class="w-48 h-48 flex items-center justify-center bg-gray-100 rounded">
+                            <img th:if="${user.healthCard.qrCode}" th:src="${user.healthCard.qrCode}" alt="Health Card QR Code" 
+                                 class="w-48 h-48 object-contain" id="health-card-qr">
+                            <div th:unless="${user.healthCard.qrCode}" class="w-48 h-48 flex items-center justify-center bg-gray-100 rounded">
                                 <p class="text-gray-500 text-sm text-center">QR Code not available</p>
                             </div>
                         </div>
@@ -159,45 +161,41 @@
                     </div>
                 </div>
                 
-                <!-- Profile layout for non-PATIENT users (without QR Code) -->
-                <div th:unless="${user.role.name() == 'PATIENT'}" class="space-y-6">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="space-y-3">
-                            <p class="text-gray-700">
-                                <strong><i class="fas fa-user text-primary mr-2"></i> Name:</strong> 
-                                <span th:text="${user.name}"></span>
-                            </p>
-                            <p class="text-gray-700">
-                                <strong><i class="fas fa-envelope text-primary mr-2"></i> Email:</strong> 
-                                <span th:text="${user.email}"></span>
-                            </p>
-                            <p th:if="${user.contactNumber}" class="text-gray-700">
-                                <strong><i class="fas fa-phone text-primary mr-2"></i> Contact:</strong> 
-                                <span th:text="${user.contactNumber}"></span>
-                            </p>
-                        </div>
-                        <div class="space-y-3">
-                            <p th:if="${user.dateOfBirth}" class="text-gray-700">
-                                <strong><i class="fas fa-calendar text-primary mr-2"></i> Date of Birth:</strong> 
-                                <span th:text="${#temporals.format(user.dateOfBirth, 'dd-MM-yyyy')}"></span>
-                            </p>
-                            <p th:if="${user.gender}" class="text-gray-700">
-                                <strong><i class="fas fa-venus-mars text-primary mr-2"></i> Gender:</strong> 
-                                <span th:text="${user.gender}"></span>
-                            </p>
-                            <p th:if="${user.address}" class="text-gray-700">
-                                <strong><i class="fas fa-map-marker-alt text-primary mr-2"></i> Address:</strong> 
-                                <span th:text="${user.address}"></span>
-                            </p>
-                        </div>
-                    </div>
+                <!-- Download Button -->
+                <div class="mt-6 text-center">
+                    <a th:href="@{/healthcard/download}" class="inline-block bg-blue-500 hover:bg-blue-600 text-white px-8 py-3.5 rounded-lg font-semibold transition duration-200 shadow-lg hover:shadow-xl transform hover:scale-105">
+                        <i class="fas fa-download mr-2"></i> Download Health Card
+                    </a>
                 </div>
+            </div>
+        </div>
+        
+        <!-- Message for non-patient or no health card -->
+        <div th:if="${user != null && (user.role.name() != 'PATIENT' || user.healthCard == null)}" class="bg-white rounded-2xl shadow-xl overflow-hidden mb-8 border border-gray-100">
+            <div class="bg-gradient-to-r from-blue-100 to-blue-200 text-blue-900 px-6 py-5">
+                <h5 class="text-xl font-bold flex items-center">
+                    <i class="fas fa-info-circle mr-3 text-2xl"></i>
+                    <span>Health Card Information</span>
+                </h5>
+            </div>
+            <div class="p-8 text-center">
+                <p class="text-gray-700 text-lg" th:if="${user.role.name() != 'PATIENT'}">
+                    <i class="fas fa-user-md text-blue-600 text-3xl mb-3 block"></i>
+                    Health cards are only available for patient accounts.
+                </p>
+                <p class="text-gray-700 text-lg" th:if="${user.role.name() == 'PATIENT' && user.healthCard == null}">
+                    <i class="fas fa-spinner fa-spin text-blue-600 text-3xl mb-3 block"></i>
+                    Your health card is being generated. Please refresh the page or contact support if it doesn't appear.
+                </p>
             </div>
         </div>
 
         <!-- Quick Actions -->
         <div>
-            <h4 class="text-2xl font-bold text-gray-800 mb-6">Quick Actions</h4>
+            <h4 class="text-3xl font-bold text-gray-800 mb-6 flex items-center">
+                <i class="fas fa-bolt text-blue-500 mr-3"></i>
+                <span>Quick Actions</span>
+            </h4>
             
             <!-- Patient Actions -->
             <div th:if="${user.role.name() == 'PATIENT'}" class="grid grid-cols-1 md:grid-cols-3 gap-6">
