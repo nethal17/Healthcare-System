@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Healthcare System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+    <div class="w-full max-w-md">
+        <div class="bg-white rounded-2xl shadow-2xl overflow-hidden">
+            <!-- Header -->
+            <div class="bg-blue-600 text-white p-8 text-center">
+                <i class="fas fa-hospital text-5xl mb-3"></i>
+                <h3 class="text-2xl font-bold mb-1">Healthcare System</h3>
+                <p class="text-sm opacity-90">Login to your account</p>
+            </div>
+            
+            <!-- Body -->
+            <div class="p-8">
+                <!-- Success Message -->
+                <div th:if="${successMessage}" class="mb-4 p-4 bg-green-50 border-l-4 border-green-500 rounded-lg">
+                    <div class="flex items-center">
+                        <i class="fas fa-check-circle text-green-500 mr-2"></i>
+                        <span class="text-green-700 text-sm" th:text="${successMessage}"></span>
+                    </div>
+                </div>
+
+                <!-- Error Message -->
+                <div th:if="${errorMessage}" class="mb-4 p-4 bg-red-50 border-l-4 border-red-500 rounded-lg">
+                    <div class="flex items-center">
+                        <i class="fas fa-exclamation-circle text-red-500 mr-2"></i>
+                        <span class="text-red-700 text-sm" th:text="${errorMessage}"></span>
+                    </div>
+                </div>
+
+                <form th:action="@{/login}" th:object="${loginRequest}" method="post">
+                    <!-- Email -->
+                    <div class="mb-4">
+                        <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+                                <i class="fas fa-envelope"></i>
+                            </span>
+                            <input type="email" id="email" th:field="*{email}" 
+                                   class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition duration-200"
+                                   placeholder="Enter your email" required>
+                        </div>
+                        <div class="text-red-500 text-xs mt-1" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></div>
+                    </div>
+
+                    <!-- Password -->
+                    <div class="mb-4">
+                        <label for="password" class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+                                <i class="fas fa-lock"></i>
+                            </span>
+                            <input type="password" id="password" th:field="*{password}" 
+                                   class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition duration-200"
+                                   placeholder="Enter your password" required>
+                        </div>
+                        <div class="text-red-500 text-xs mt-1" th:if="${#fields.hasErrors('password')}" th:errors="*{password}"></div>
+                    </div>
+
+                    <!-- Remember Me -->
+                    <div class="mb-6 flex items-center">
+                        <input type="checkbox" id="rememberMe" class="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary">
+                        <label for="rememberMe" class="ml-2 text-sm text-gray-700">Remember me</label>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:shadow-lg transform hover:scale-[1.02] transition duration-200">
+                        <i class="fas fa-sign-in-alt mr-2"></i> Login
+                    </button>
+
+                    <!-- Register Link -->
+                    <div class="mt-6 text-center">
+                        <p class="text-sm text-gray-600">
+                            New patient? 
+                            <a th:href="@{/register}" class="text-blue-400 font-semibold hover:underline">Register here</a>
+                        </p>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Footer -->
+            <div class="bg-gray-50 px-8 py-4 text-center border-t border-gray-100">
+                <small class="text-gray-500 text-xs">
+                    <i class="fas fa-info-circle"></i> For doctors and admin access, please contact system administrator
+                </small>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Healthcare System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#667eea',
+                        secondary: '#764ba2',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-50">
+    <!-- Navbar -->
+    <nav class="bg-gray-800 shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo -->
+                <div class="flex items-center">
+                    <a href="#" class="flex items-center text-white text-xl font-bold">
+                        <i class="fas fa-hospital mr-2"></i>
+                        Healthcare System
+                    </a>
+                </div>
+
+                <!-- Menu Items -->
+                <div class="hidden md:flex items-center space-x-4">
+                    <a th:href="@{/dashboard}" class="text-white bg-gray-700 px-3 py-2 rounded-md text-sm font-medium">
+                        <i class="fas fa-home mr-1"></i> Dashboard
+                    </a>
+                    <a th:if="${user != null && user.role.name() == 'PATIENT'}" href="#" class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">
+                        <i class="fas fa-calendar-check mr-1"></i> Appointments
+                    </a>
+                    <a th:if="${user != null && user.role.name() == 'DOCTOR'}" href="#" class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">
+                        <i class="fas fa-user-injured mr-1"></i> Patients
+                    </a>
+                    <a th:if="${user != null && user.role.name() == 'ADMIN'}" href="#" class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">
+                        <i class="fas fa-users-cog mr-1"></i> Manage Users
+                    </a>
+                </div>
+
+                <!-- User Info -->
+                <div th:if="${user != null}" class="flex items-center space-x-4">
+                    <div class="flex items-center space-x-3">
+                        <!-- Avatar -->
+                        <div class="w-10 h-10 rounded-full bg-gradient-to-r from-primary to-secondary flex items-center justify-center text-white font-bold">
+                            <span th:text="${#strings.substring(user.name, 0, 1)}">U</span>
+                        </div>
+                        <!-- User Details -->
+                        <div class="hidden lg:block">
+                            <div class="text-sm font-medium text-white" th:text="${user.name}">User Name</div>
+                            <div class="text-xs text-gray-400">
+                                <span th:if="${user.role.name() == 'PATIENT'}" class="inline-block bg-green-500 text-white px-2 py-1 rounded-full text-xs">Patient</span>
+                                <span th:if="${user.role.name() == 'DOCTOR'}" class="inline-block bg-blue-500 text-white px-2 py-1 rounded-full text-xs">Doctor</span>
+                                <span th:if="${user.role.name() == 'ADMIN'}" class="inline-block bg-red-500 text-white px-2 py-1 rounded-full text-xs">Admin</span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Logout Button -->
+                    <a th:href="@{/logout}" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition duration-200">
+                        <i class="fas fa-sign-out-alt mr-1"></i> Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Welcome Section -->
+        <div class="bg-gradient-to-r from-primary to-secondary rounded-2xl shadow-lg p-8 mb-8 text-white">
+            <h2 class="text-3xl font-bold mb-2">
+                <i class="fas fa-hand-wave mr-2"></i> Welcome, <span th:text="${user.name}">User</span>!
+            </h2>
+            <p class="text-lg opacity-90">
+                <span th:if="${user.role.name() == 'PATIENT'}">
+                    You are logged in as a Patient. You can book appointments and view your medical records.
+                </span>
+                <span th:if="${user.role.name() == 'DOCTOR'}">
+                    You are logged in as a Doctor. You can manage your patients and appointments.
+                </span>
+                <span th:if="${user.role.name() == 'ADMIN'}">
+                    You are logged in as a Healthcare Manager. You have full system access.
+                </span>
+            </p>
+        </div>
+
+        <!-- User Information Card -->
+        <div class="bg-white rounded-2xl shadow-lg overflow-hidden mb-8">
+            <div class="bg-primary text-white px-6 py-4">
+                <h5 class="text-xl font-bold"><i class="fas fa-user-circle mr-2"></i> Your Profile Information</h5>
+            </div>
+            <div class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-3">
+                        <p class="text-gray-700">
+                            <strong><i class="fas fa-user text-primary mr-2"></i> Name:</strong> 
+                            <span th:text="${user.name}"></span>
+                        </p>
+                        <p class="text-gray-700">
+                            <strong><i class="fas fa-envelope text-primary mr-2"></i> Email:</strong> 
+                            <span th:text="${user.email}"></span>
+                        </p>
+                        <p th:if="${user.contactNumber}" class="text-gray-700">
+                            <strong><i class="fas fa-phone text-primary mr-2"></i> Contact:</strong> 
+                            <span th:text="${user.contactNumber}"></span>
+                        </p>
+                    </div>
+                    <div class="space-y-3">
+                        <p th:if="${user.dateOfBirth}" class="text-gray-700">
+                            <strong><i class="fas fa-calendar text-primary mr-2"></i> Date of Birth:</strong> 
+                            <span th:text="${#temporals.format(user.dateOfBirth, 'dd-MM-yyyy')}"></span>
+                        </p>
+                        <p th:if="${user.gender}" class="text-gray-700">
+                            <strong><i class="fas fa-venus-mars text-primary mr-2"></i> Gender:</strong> 
+                            <span th:text="${user.gender}"></span>
+                        </p>
+                        <p th:if="${user.address}" class="text-gray-700">
+                            <strong><i class="fas fa-map-marker-alt text-primary mr-2"></i> Address:</strong> 
+                            <span th:text="${user.address}"></span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div>
+            <h4 class="text-2xl font-bold text-gray-800 mb-6">Quick Actions</h4>
+            
+            <!-- Patient Actions -->
+            <div th:if="${user.role.name() == 'PATIENT'}" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-white rounded-xl shadow-lg p-6 text-center hover:shadow-xl transform hover:-translate-y-2 transition duration-300">
+                    <i class="fas fa-calendar-plus text-5xl text-blue-500 mb-4"></i>
+                    <h5 class="text-xl font-bold text-gray-800 mb-2">Book Appointment</h5>
+                    <p class="text-gray-600 mb-4">Schedule a new appointment with a doctor</p>
+                    <button class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-medium transition duration-200">
+                        Book Now
+                    </button>
+                </div>
+                <div class="bg-white rounded-xl shadow-lg p-6 text-center hover:shadow-xl transform hover:-translate-y-2 transition duration-300">
+                    <i class="fas fa-file-medical text-5xl text-green-500 mb-4"></i>
+                    <h5 class="text-xl font-bold text-gray-800 mb-2">Medical Records</h5>
+                    <p class="text-gray-600 mb-4">View your medical history and reports</p>
+                    <button class="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-lg font-medium transition duration-200">
+                        View Records
+                    </button>
+                </div>
+                <div class="bg-white rounded-xl shadow-lg p-6 text-center hover:shadow-xl transform hover:-translate-y-2 transition duration-300">
+                    <i class="fas fa-pills text-5xl text-yellow-500 mb-4"></i>
+                    <h5 class="text-xl font-bold text-gray-800 mb-2">Prescriptions</h5>
+                    <p class="text-gray-600 mb-4">View and manage your prescriptions</p>
+                    <button class="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-2 rounded-lg font-medium transition duration-200">
+                        View All
+                    </button>
+                </div>
+            </div>
+
+            <!-- Doctor Actions -->
+            <div th:if="${user.role.name() == 'DOCTOR'}" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-white rounded-xl shadow-lg p-6 text-center hover:shadow-xl transform hover:-translate-y-2 transition duration-300">
+                    <i class="fas fa-users text-5xl text-blue-500 mb-4"></i>
+                    <h5 class="text-xl font-bold text-gray-800 mb-2">My Patients</h5>
+                    <p class="text-gray-600 mb-4">View and manage your patients</p>
+                    <button class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-medium transition duration-200">
+                        View Patients
+                    </button>
+                </div>
+                <div class="bg-white rounded-xl shadow-lg p-6 text-center hover:shadow-xl transform hover:-translate-y-2 transition duration-300">
+                    <i class="fas fa-calendar-alt text-5xl text-green-500 mb-4"></i>
+                    <h5 class="text-xl font-bold text-gray-800 mb-2">Appointments</h5>
+                    <p class="text-gray-600 mb-4">Manage your appointment schedule</p>
+                    <button class="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-lg font-medium transition duration-200">
+                        View Schedule
+                    </button>
+                </div>
+                <div class="bg-white rounded-xl shadow-lg p-6 text-center hover:shadow-xl transform hover:-translate-y-2 transition duration-300">
+                    <i class="fas fa-prescription text-5xl text-yellow-500 mb-4"></i>
+                    <h5 class="text-xl font-bold text-gray-800 mb-2">Prescriptions</h5>
+                    <p class="text-gray-600 mb-4">Create and manage prescriptions</p>
+                    <button class="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-2 rounded-lg font-medium transition duration-200">
+                        Manage
+                    </button>
+                </div>
+            </div>
+
+            <!-- Admin Actions -->
+            <div th:if="${user.role.name() == 'ADMIN'}" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-white rounded-xl shadow-lg p-6 text-center hover:shadow-xl transform hover:-translate-y-2 transition duration-300">
+                    <i class="fas fa-users-cog text-5xl text-blue-500 mb-4"></i>
+                    <h5 class="text-xl font-bold text-gray-800 mb-2">User Management</h5>
+                    <p class="text-gray-600 mb-4">Manage doctors, patients, and staff</p>
+                    <button class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-medium transition duration-200">
+                        Manage Users
+                    </button>
+                </div>
+                <div class="bg-white rounded-xl shadow-lg p-6 text-center hover:shadow-xl transform hover:-translate-y-2 transition duration-300">
+                    <i class="fas fa-chart-line text-5xl text-green-500 mb-4"></i>
+                    <h5 class="text-xl font-bold text-gray-800 mb-2">Reports</h5>
+                    <p class="text-gray-600 mb-4">View system reports and analytics</p>
+                    <button class="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-lg font-medium transition duration-200">
+                        View Reports
+                    </button>
+                </div>
+                <div class="bg-white rounded-xl shadow-lg p-6 text-center hover:shadow-xl transform hover:-translate-y-2 transition duration-300">
+                    <i class="fas fa-cog text-5xl text-yellow-500 mb-4"></i>
+                    <h5 class="text-xl font-bold text-gray-800 mb-2">System Settings</h5>
+                    <p class="text-gray-600 mb-4">Configure system preferences</p>
+                    <button class="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-2 rounded-lg font-medium transition duration-200">
+                        Settings
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
