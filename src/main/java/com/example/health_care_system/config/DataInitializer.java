@@ -78,6 +78,24 @@ public class DataInitializer {
                 log.info("Doctor 2 created - Email: doctor2@healthcare.com, Password: doctor123");
             }
             
+            // Create sample staff member if not exists
+            if (!userRepository.existsByEmail("staff@healthcare.com")) {
+                User staff = new User();
+                staff.setName("Reception Staff");
+                staff.setEmail("staff@healthcare.com");
+                staff.setPassword(passwordEncoder.encode("staff123"));
+                staff.setRole(UserRole.STAFF);
+                staff.setGender("Female");
+                staff.setContactNumber("0774567890");
+                staff.setAddress("Reception Desk");
+                staff.setDateOfBirth(LocalDate.of(1990, 3, 10));
+                staff.setActive(true);
+                staff.setCreatedAt(LocalDateTime.now());
+                staff.setUpdatedAt(LocalDateTime.now());
+                userRepository.save(staff);
+                log.info("Staff member created - Email: staff@healthcare.com, Password: staff123");
+            }
+            
             log.info("Data initialization completed!");
         };
     }

@@ -37,6 +37,8 @@ public class User {
     
     private boolean active = true;
     
+    private String qrCode; // Base64 encoded QR code image
+    
     private LocalDateTime createdAt;
     
     private LocalDateTime updatedAt;

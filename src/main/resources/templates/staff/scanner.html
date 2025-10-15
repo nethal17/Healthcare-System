@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Scanner - Healthcare System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#667eea',
+                        secondary: '#764ba2',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-50">
+    <!-- Navbar -->
+    <nav class="bg-gray-800 shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <a href="#" class="flex items-center text-white text-xl font-bold">
+                        <i class="fas fa-hospital mr-2"></i>
+                        Healthcare System
+                    </a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a th:href="@{/dashboard}" class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">
+                        <i class="fas fa-home mr-1"></i> Dashboard
+                    </a>
+                    <a th:href="@{/staff/scanner}" class="text-white bg-gray-700 px-3 py-2 rounded-md text-sm font-medium">
+                        <i class="fas fa-qrcode mr-1"></i> QR Scanner
+                    </a>
+                    <a th:href="@{/logout}" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition duration-200">
+                        <i class="fas fa-sign-out-alt mr-1"></i> Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-purple-500 to-purple-700 rounded-2xl shadow-lg p-8 mb-8 text-white">
+            <h2 class="text-3xl font-bold mb-2">
+                <i class="fas fa-qrcode mr-2"></i> Patient QR Code Scanner
+            </h2>
+            <p class="text-lg opacity-90">
+                Scan patient QR codes to quickly access their information and verify their identity
+            </p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Scanner Section -->
+            <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+                <div class="bg-purple-500 text-white px-6 py-4">
+                    <h5 class="text-xl font-bold">
+                        <i class="fas fa-camera mr-2"></i> Camera Scanner
+                    </h5>
+                </div>
+                <div class="p-6">
+                    <!-- Scanner Controls -->
+                    <div class="mb-4 space-y-3">
+                        <button id="startScanBtn" class="w-full bg-purple-500 hover:bg-purple-600 text-white px-6 py-3 rounded-lg font-semibold transition duration-200">
+                            <i class="fas fa-camera mr-2"></i> Start Camera
+                        </button>
+                        <button id="stopScanBtn" class="hidden w-full bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-lg font-semibold transition duration-200">
+                            <i class="fas fa-stop mr-2"></i> Stop Camera
+                        </button>
+                    </div>
+
+                    <!-- Scanner Display -->
+                    <div id="reader" class="w-full border-4 border-purple-200 rounded-lg overflow-hidden" style="display: none;"></div>
+                    
+                    <!-- Status Messages -->
+                    <div id="scanStatus" class="mt-4 hidden">
+                        <div class="flex items-center p-4 rounded-lg">
+                            <i class="fas fa-spinner fa-spin text-purple-500 text-2xl mr-3"></i>
+                            <span class="text-gray-700">Scanning for QR code...</span>
+                        </div>
+                    </div>
+
+                    <div id="scanError" class="mt-4 hidden">
+                        <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg">
+                            <div class="flex items-center">
+                                <i class="fas fa-exclamation-circle text-red-500 mr-2"></i>
+                                <span class="text-red-700 text-sm" id="errorMessage"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Patient Details Section -->
+            <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+                <div class="bg-green-500 text-white px-6 py-4">
+                    <h5 class="text-xl font-bold">
+                        <i class="fas fa-user-circle mr-2"></i> Patient Details
+                    </h5>
+                </div>
+                <div class="p-6">
+                    <div id="patientDetails" class="hidden">
+                        <div class="space-y-4">
+                            <div class="flex items-center p-4 bg-green-50 rounded-lg border-l-4 border-green-500">
+                                <i class="fas fa-check-circle text-green-500 text-2xl mr-3"></i>
+                                <span class="text-green-700 font-semibold">Patient Information Retrieved Successfully!</span>
+                            </div>
+                            
+                            <div class="grid grid-cols-1 gap-4">
+                                <div class="bg-gray-50 p-4 rounded-lg">
+                                    <p class="text-sm text-gray-500 mb-1">Patient ID</p>
+                                    <p class="text-lg font-semibold text-gray-800" id="patientId">-</p>
+                                </div>
+                                
+                                <div class="bg-gray-50 p-4 rounded-lg">
+                                    <p class="text-sm text-gray-500 mb-1">
+                                        <i class="fas fa-user text-purple-500 mr-1"></i> Full Name
+                                    </p>
+                                    <p class="text-lg font-semibold text-gray-800" id="patientName">-</p>
+                                </div>
+                                
+                                <div class="bg-gray-50 p-4 rounded-lg">
+                                    <p class="text-sm text-gray-500 mb-1">
+                                        <i class="fas fa-envelope text-purple-500 mr-1"></i> Email
+                                    </p>
+                                    <p class="text-lg font-semibold text-gray-800" id="patientEmail">-</p>
+                                </div>
+                                
+                                <div class="bg-gray-50 p-4 rounded-lg">
+                                    <p class="text-sm text-gray-500 mb-1">
+                                        <i class="fas fa-phone text-purple-500 mr-1"></i> Contact Number
+                                    </p>
+                                    <p class="text-lg font-semibold text-gray-800" id="patientContact">-</p>
+                                </div>
+                                
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div class="bg-gray-50 p-4 rounded-lg">
+                                        <p class="text-sm text-gray-500 mb-1">
+                                            <i class="fas fa-calendar text-purple-500 mr-1"></i> Date of Birth
+                                        </p>
+                                        <p class="text-lg font-semibold text-gray-800" id="patientDOB">-</p>
+                                    </div>
+                                    
+                                    <div class="bg-gray-50 p-4 rounded-lg">
+                                        <p class="text-sm text-gray-500 mb-1">
+                                            <i class="fas fa-venus-mars text-purple-500 mr-1"></i> Gender
+                                        </p>
+                                        <p class="text-lg font-semibold text-gray-800" id="patientGender">-</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="bg-gray-50 p-4 rounded-lg">
+                                    <p class="text-sm text-gray-500 mb-1">
+                                        <i class="fas fa-map-marker-alt text-purple-500 mr-1"></i> Address
+                                    </p>
+                                    <p class="text-lg font-semibold text-gray-800" id="patientAddress">-</p>
+                                </div>
+                                
+                                <div class="bg-gray-50 p-4 rounded-lg">
+                                    <p class="text-sm text-gray-500 mb-1">
+                                        <i class="fas fa-user-tag text-purple-500 mr-1"></i> Role
+                                    </p>
+                                    <p class="text-lg font-semibold text-gray-800" id="patientRole">-</p>
+                                </div>
+                            </div>
+
+                            <button id="clearBtn" class="w-full bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded-lg font-semibold transition duration-200 mt-4">
+                                <i class="fas fa-redo mr-2"></i> Scan Another Code
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="noPatientData" class="flex flex-col items-center justify-center py-12">
+                        <i class="fas fa-qrcode text-gray-300 text-6xl mb-4"></i>
+                        <p class="text-gray-500 text-center">
+                            No patient data available.<br>
+                            Scan a QR code to view patient details.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let html5QrCode = null;
+        let isScanning = false;
+
+        const startBtn = document.getElementById('startScanBtn');
+        const stopBtn = document.getElementById('stopScanBtn');
+        const readerDiv = document.getElementById('reader');
+        const scanStatus = document.getElementById('scanStatus');
+        const scanError = document.getElementById('scanError');
+        const patientDetails = document.getElementById('patientDetails');
+        const noPatientData = document.getElementById('noPatientData');
+        const clearBtn = document.getElementById('clearBtn');
+
+        // Start scanning
+        startBtn.addEventListener('click', function() {
+            startScanning();
+        });
+
+        // Stop scanning
+        stopBtn.addEventListener('click', function() {
+            stopScanning();
+        });
+
+        // Clear patient data
+        clearBtn.addEventListener('click', function() {
+            patientDetails.classList.add('hidden');
+            noPatientData.classList.remove('hidden');
+            startScanning();
+        });
+
+        function startScanning() {
+            if (isScanning) return;
+
+            html5QrCode = new Html5Qrcode("reader");
+            readerDiv.style.display = 'block';
+            scanStatus.classList.remove('hidden');
+            scanError.classList.add('hidden');
+            startBtn.classList.add('hidden');
+            stopBtn.classList.remove('hidden');
+
+            html5QrCode.start(
+                { facingMode: "environment" },
+                {
+                    fps: 10,
+                    qrbox: { width: 250, height: 250 }
+                },
+                onScanSuccess,
+                onScanError
+            ).then(() => {
+                isScanning = true;
+            }).catch(err => {
+                showError("Failed to start camera: " + err);
+                stopScanning();
+            });
+        }
+
+        function stopScanning() {
+            if (!isScanning || !html5QrCode) return;
+
+            html5QrCode.stop().then(() => {
+                isScanning = false;
+                readerDiv.style.display = 'none';
+                scanStatus.classList.add('hidden');
+                startBtn.classList.remove('hidden');
+                stopBtn.classList.add('hidden');
+            }).catch(err => {
+                console.error("Failed to stop scanning:", err);
+            });
+        }
+
+        function onScanSuccess(decodedText, decodedResult) {
+            console.log("QR Code scanned:", decodedText);
+            stopScanning();
+            fetchPatientData(decodedText);
+        }
+
+        function onScanError(errorMessage) {
+            // Ignore scanning errors (they happen frequently while searching)
+        }
+
+        function fetchPatientData(qrContent) {
+            fetch('/staff/scan-qr', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ qrContent: qrContent })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    displayPatientData(data.user);
+                } else {
+                    showError(data.error || 'Failed to fetch patient data');
+                }
+            })
+            .catch(error => {
+                showError('Network error: ' + error.message);
+            });
+        }
+
+        function displayPatientData(user) {
+            document.getElementById('patientId').textContent = user.id || '-';
+            document.getElementById('patientName').textContent = user.name || '-';
+            document.getElementById('patientEmail').textContent = user.email || '-';
+            document.getElementById('patientContact').textContent = user.contactNumber || '-';
+            document.getElementById('patientDOB').textContent = user.dateOfBirth || '-';
+            document.getElementById('patientGender').textContent = user.gender || '-';
+            document.getElementById('patientAddress').textContent = user.address || '-';
+            document.getElementById('patientRole').textContent = user.role || '-';
+
+            noPatientData.classList.add('hidden');
+            patientDetails.classList.remove('hidden');
+            scanError.classList.add('hidden');
+        }
+
+        function showError(message) {
+            document.getElementById('errorMessage').textContent = message;
+            scanError.classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>

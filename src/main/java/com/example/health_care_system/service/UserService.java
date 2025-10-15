@@ -19,6 +19,7 @@ public class UserService {
     
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder passwordEncoder;
+    private final QRCodeService qrCodeService;
     
     public UserDTO registerPatient(RegisterRequest request) {
         // Check if passwords match
@@ -47,6 +48,11 @@ public class UserService {
         
         User savedUser = userRepository.save(user);
         
+        // Generate QR code only for PATIENT users
+        String qrCode = qrCodeService.generateQRCode(savedUser.getId());
+        savedUser.setQrCode(qrCode);
+        savedUser = userRepository.save(savedUser);
+        
         return convertToDTO(savedUser);
     }
     
@@ -65,6 +71,13 @@ public class UserService {
         
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new RuntimeException("Invalid email or password");
+        }
+        
+        // Generate QR code only for PATIENT users if not exists
+        if (user.getRole() == UserRole.PATIENT && (user.getQrCode() == null || user.getQrCode().isEmpty())) {
+            String qrCode = qrCodeService.generateQRCode(user.getId());
+            user.setQrCode(qrCode);
+            userRepository.save(user);
         }
         
         return convertToDTO(user);
@@ -92,6 +105,12 @@ public class UserService {
         dto.setGender(user.getGender());
         dto.setAddress(user.getAddress());
         dto.setContactNumber(user.getContactNumber());
+        dto.setQrCode(user.getQrCode());
         return dto;
+    }
+    
+    public User getUserEntityById(String id) {
+        return userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found"));
     }
 }
