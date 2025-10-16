@@ -165,7 +165,7 @@ public class UserService {
             Patient patient = (Patient) user;
             dto.setDateOfBirth(patient.getDateOfBirth());
             dto.setAddress(patient.getAddress());
-            dto.setQrCode(patient.getQrCode());
+            //dto.setQrCode(patient.getQrCode());
         }
         
         return dto;
