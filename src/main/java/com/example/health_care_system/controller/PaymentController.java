@@ -5,7 +5,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 
 @Controller
 
-public class HomeController {
+public class PaymentController {
 
     @GetMapping
     public String index(){
@@ -20,6 +20,16 @@ public class HomeController {
     @GetMapping("/cancel")
     public String cancel(){
         return "cancel";
+    }
+
+    @GetMapping("/InsuranceCollection")
+    public String InsuranceCollection(){
+        return "InsuranceCollection";
+    }
+
+    @GetMapping("/PendingInsuranceRequest")
+    public String PendingInsuranceRequest(){
+        return "PendingInsuranceRequest";
     }
 
 }

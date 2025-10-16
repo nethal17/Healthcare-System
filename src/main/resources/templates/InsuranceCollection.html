@@ -1,10 +1,347 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>$Title$</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Insurance Collection Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'primary-blue': '#1e40af',
+                        'secondary-blue': '#3b82f6',
+                        'accent-green': '#10b981',
+                        'light-blue': '#dbeafe'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+
+        .card-hover {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        .form-input:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .step-indicator {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+        }
+
+        .step-active {
+            background-color: #1e40af;
+            color: white;
+        }
+
+        .step-inactive {
+            background-color: #e5e7eb;
+            color: #6b7280;
+        }
+
+        .step-completed {
+            background-color: #10b981;
+            color: white;
+        }
+    </style>
 </head>
-<body>
-$END$
+<body class="min-h-screen bg-gray-50">
+
+<!-- Main Content -->
+<main class="container mx-auto px-4 py-8">
+    <div class="max-w-4xl mx-auto">
+        <!-- Page Header -->
+        <div class="text-center mb-10">
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">Insurance Claim Submission</h1>
+            <p class="text-gray-600">Submit your insurance claim quickly and easily with our secure portal</p>
+        </div>
+
+        <!-- Progress Steps -->
+        <div class="bg-white rounded-xl shadow-sm p-6 mb-8">
+            <div class="flex justify-between items-center mb-2">
+                <div class="flex-1 text-center">
+                    <div class="step-indicator step-completed mx-auto">
+                        <i class="fas fa-check text-xs"></i>
+                    </div>
+                    <p class="text-sm font-medium mt-2 text-gray-700">Personal Info</p>
+                </div>
+                <div class="flex-1">
+                    <div class="h-1 bg-gray-200">
+                        <div class="h-1 bg-accent-green w-full"></div>
+                    </div>
+                </div>
+                <div class="flex-1 text-center">
+                    <div class="step-indicator step-completed mx-auto">
+                        <i class="fas fa-check text-xs"></i>
+                    </div>
+                    <p class="text-sm font-medium mt-2 text-gray-700">Insurance Details</p>
+                </div>
+                <div class="flex-1">
+                    <div class="h-1 bg-gray-200">
+                        <div class="h-1 bg-accent-green w-full"></div>
+                    </div>
+                </div>
+                <div class="flex-1 text-center">
+                    <div class="step-indicator step-active mx-auto">3</div>
+                    <p class="text-sm font-medium mt-2 text-primary-blue">Claim Details</p>
+                </div>
+                <div class="flex-1">
+                    <div class="h-1 bg-gray-200"></div>
+                </div>
+                <div class="flex-1 text-center">
+                    <div class="step-indicator step-inactive mx-auto">4</div>
+                    <p class="text-sm font-medium mt-2 text-gray-500">Review</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Claim Form -->
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden card-hover">
+            <div class="bg-primary-blue text-white p-6">
+                <h2 class="text-xl font-bold flex items-center">
+                    <i class="fas fa-file-medical mr-3"></i>
+                    Claim Details
+                </h2>
+                <p class="text-blue-100 mt-1">Please provide details about your medical service</p>
+            </div>
+
+            <form class="p-6">
+                <!-- Service Information -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">Service Information</h3>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-gray-700 mb-2" for="service-date">Service Date</label>
+                            <input type="date" id="service-date" class="w-full px-4 py-2 border border-gray-300 rounded-lg form-input focus:outline-none">
+                        </div>
+
+                        <div>
+                            <label class="block text-gray-700 mb-2" for="provider">Healthcare Provider</label>
+                            <select id="provider" class="w-full px-4 py-2 border border-gray-300 rounded-lg form-input focus:outline-none">
+                                <option value="">Select Provider</option>
+                                <option value="general-hospital">General Hospital</option>
+                                <option value="city-medical">City Medical Center</option>
+                                <option value="community-clinic">Community Health Clinic</option>
+                                <option value="specialty-center">Specialty Care Center</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-gray-700 mb-2" for="diagnosis">Diagnosis Code</label>
+                            <input type="text" id="diagnosis" class="w-full px-4 py-2 border border-gray-300 rounded-lg form-input focus:outline-none" placeholder="e.g. J06.9">
+                        </div>
+
+                        <div>
+                            <label class="block text-gray-700 mb-2" for="procedure">Procedure Code</label>
+                            <input type="text" id="procedure" class="w-full px-4 py-2 border border-gray-300 rounded-lg form-input focus:outline-none" placeholder="e.g. 99213">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Billing Information -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">Billing Information</h3>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-gray-700 mb-2" for="billed-amount">Total Billed Amount</label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-3 text-gray-500">$</span>
+                                <input type="number" id="billed-amount" class="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg form-input focus:outline-none" placeholder="0.00">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-gray-700 mb-2" for="insurance-covered">Insurance Covered Amount</label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-3 text-gray-500">$</span>
+                                <input type="number" id="insurance-covered" class="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg form-input focus:outline-none" placeholder="0.00">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-gray-700 mb-2" for="patient-responsibility">Patient Responsibility</label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-3 text-gray-500">$</span>
+                                <input type="number" id="patient-responsibility" class="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg form-input focus:outline-none" placeholder="0.00">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Document Upload -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">Supporting Documents</h3>
+                    <p class="text-gray-600 mb-4">Please upload relevant documents to support your claim</p>
+
+                    <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                        <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-3"></i>
+                        <p class="text-gray-600 mb-2">Drag and drop files here or</p>
+                        <button type="button" class="bg-light-blue text-primary-blue font-medium py-2 px-4 rounded-lg hover:bg-blue-200 transition duration-300">
+                            <i class="fas fa-folder-open mr-2"></i>Browse Files
+                        </button>
+                        <p class="text-gray-500 text-sm mt-3">Accepted file types: PDF, JPG, PNG (Max: 10MB each)</p>
+                    </div>
+
+                    <div class="mt-4">
+                        <h4 class="font-medium text-gray-700 mb-2">Required Documents:</h4>
+                        <ul class="list-disc list-inside text-gray-600 space-y-1">
+                            <li>Itemized bill from provider</li>
+                            <li>Proof of payment</li>
+                            <li>Doctor's prescription (if applicable)</li>
+                            <li>Insurance explanation of benefits</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="flex flex-col sm:flex-row justify-between pt-6 border-t border-gray-200">
+                    <button type="button" class="bg-gray-100 text-gray-800 font-medium py-3 px-6 rounded-lg hover:bg-gray-200 transition duration-300 mb-3 sm:mb-0 flex items-center justify-center">
+                        <i class="fas fa-arrow-left mr-2"></i>Back
+                    </button>
+
+                    <div class="flex space-x-4">
+                        <button type="button" class="bg-gray-100 text-gray-800 font-medium py-3 px-6 rounded-lg hover:bg-gray-200 transition duration-300 flex items-center justify-center">
+                            <i class="fas fa-save mr-2"></i>Save Draft
+                        </button>
+                        <button type="button" class="bg-accent-green text-white font-medium py-3 px-6 rounded-lg hover:bg-green-600 transition duration-300 flex items-center justify-center">
+                            Claim <i class="fas fa-arrow-right ml-2"></i>
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Help Section -->
+        <div class="bg-white rounded-xl shadow-sm p-6 mt-8">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">Need Help?</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="bg-light-blue p-4 rounded-lg">
+                    <i class="fas fa-phone-alt text-primary-blue text-xl mb-2"></i>
+                    <h4 class="font-medium text-gray-800">Call Us</h4>
+                    <p class="text-gray-600 text-sm mt-1">1-800-MED-HELP</p>
+                </div>
+                <div class="bg-light-blue p-4 rounded-lg">
+                    <i class="fas fa-envelope text-primary-blue text-xl mb-2"></i>
+                    <h4 class="font-medium text-gray-800">Email Us</h4>
+                    <p class="text-gray-600 text-sm mt-1">support@medishield.com</p>
+                </div>
+                <div class="bg-light-blue p-4 rounded-lg">
+                    <i class="fas fa-comments text-primary-blue text-xl mb-2"></i>
+                    <h4 class="font-medium text-gray-800">Live Chat</h4>
+                    <p class="text-gray-600 text-sm mt-1">Available 24/7</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- Footer -->
+<footer class="bg-gray-800 text-white mt-12">
+    <div class="container mx-auto px-4 py-8">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div>
+                <h3 class="text-lg font-bold mb-4">MediShield Insurance</h3>
+                <p class="text-gray-400">Providing comprehensive health insurance coverage for individuals and families since 1995.</p>
+            </div>
+            <div>
+                <h4 class="font-semibold mb-4">Quick Links</h4>
+                <ul class="space-y-2 text-gray-400">
+                    <li><a href="#" class="hover:text-white">My Dashboard</a></li>
+                    <li><a href="#" class="hover:text-white">Claims History</a></li>
+                    <li><a href="#" class="hover:text-white">Coverage Details</a></li>
+                    <li><a href="#" class="hover:text-white">Find Providers</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="font-semibold mb-4">Resources</h4>
+                <ul class="space-y-2 text-gray-400">
+                    <li><a href="#" class="hover:text-white">FAQs</a></li>
+                    <li><a href="#" class="hover:text-white">Forms & Documents</a></li>
+                    <li><a href="#" class="hover:text-white">Policy Information</a></li>
+                    <li><a href="#" class="hover:text-white">Glossary</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="font-semibold mb-4">Contact Us</h4>
+                <address class="not-italic text-gray-400">
+                    <p>123 Healthcare Ave</p>
+                    <p>Medical Center, MC 12345</p>
+                    <p class="mt-2">Phone: 1-800-MED-HELP</p>
+                    <p>Email: info@medishield.com</p>
+                </address>
+            </div>
+        </div>
+        <div class="border-t border-gray-700 mt-8 pt-6 text-center text-gray-400">
+            <p>&copy; 2023 MediShield Insurance. All rights reserved.</p>
+        </div>
+    </div>
+</footer>
+
+<script>
+    // Simple form interactivity
+    document.addEventListener('DOMContentLoaded', function() {
+        // Calculate patient responsibility
+        const billedAmount = document.getElementById('billed-amount');
+        const insuranceCovered = document.getElementById('insurance-covered');
+        const patientResponsibility = document.getElementById('patient-responsibility');
+
+        function calculateResponsibility() {
+            if (billedAmount.value && insuranceCovered.value) {
+                const billed = parseFloat(billedAmount.value);
+                const covered = parseFloat(insuranceCovered.value);
+                patientResponsibility.value = (billed - covered).toFixed(2);
+            }
+        }
+
+        billedAmount.addEventListener('input', calculateResponsibility);
+        insuranceCovered.addEventListener('input', calculateResponsibility);
+
+        // Add interactivity to buttons
+        document.querySelectorAll('button').forEach(button => {
+            button.addEventListener('click', function() {
+                const buttonText = this.textContent.trim();
+
+                if (buttonText.includes('Continue')) {
+                    alert('Proceeding to review step...');
+                    // In real app: navigate to next step
+                } else if (buttonText.includes('Save Draft')) {
+                    alert('Draft saved successfully!');
+                    // In real app: save form data
+                } else if (buttonText.includes('Back')) {
+                    alert('Going back to previous step...');
+                    // In real app: navigate to previous step
+                } else if (buttonText.includes('Browse Files')) {
+                    alert('File browser would open here');
+                    // In real app: trigger file input
+                }
+            });
+        });
+    });
+</script>
 </body>
 </html>
