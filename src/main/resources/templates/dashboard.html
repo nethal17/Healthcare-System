@@ -6,18 +6,7 @@
     <title>Dashboard - Healthcare System</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#667eea',
-                        secondary: '#764ba2',
-                    }
-                }
-            }
-        }
-    </script>
+
 </head>
 <body class="bg-gray-50">
     <!-- Navbar -->
@@ -54,10 +43,10 @@
                 <!-- User Info -->
                 <div th:if="${user != null}" class="flex items-center space-x-4">
                     <div class="flex items-center space-x-3">
-                        <!-- Avatar -->
-                        <div class="w-10 h-10 rounded-full bg-gradient-to-r from-primary to-secondary flex items-center justify-center text-white font-bold">
+                        <!-- Avatar - Clickable -->
+                        <a th:href="@{/profile}" class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold hover:bg-blue-600 transition duration-200 cursor-pointer" title="View Profile">
                             <span th:text="${#strings.substring(user.name, 0, 1)}">U</span>
-                        </div>
+                        </a>
                         <!-- User Details -->
                         <div class="hidden lg:block">
                             <div class="text-sm font-medium text-white" th:text="${user.name}">User Name</div>
@@ -81,7 +70,7 @@
     <!-- Main Content -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <!-- Welcome Section -->
-        <div class="bg-gradient-to-r from-primary to-secondary rounded-2xl shadow-lg p-8 mb-8 text-white">
+        <div class="bg-blue-500 rounded-2xl shadow-lg p-8 mb-8 text-white">
             <h2 class="text-3xl font-bold mb-2">
                 <i class="fas fa-hand-wave mr-2"></i> Welcome, <span th:text="${user.name}">User</span>!
             </h2>
@@ -101,94 +90,99 @@
             </p>
         </div>
 
-        <!-- User Information Card -->
-        <div class="bg-white rounded-2xl shadow-lg overflow-hidden mb-8">
-            <div class="bg-primary text-white px-6 py-4">
-                <h5 class="text-xl font-bold"><i class="fas fa-user-circle mr-2"></i> Your Profile Information</h5>
+        <!-- Health Card Section (Only for PATIENT) -->
+        <div th:if="${user.role.name() == 'PATIENT' && user.healthCard != null}" class="bg-white rounded-2xl shadow-lg overflow-hidden mb-8">
+            <div class="bg-blue-500 text-white px-6 py-4">
+                <h5 class="text-xl font-bold"><i class="fas fa-id-card mr-2"></i> Your Health Card</h5>
             </div>
             <div class="p-6">
-                <!-- Profile layout for PATIENT users (with QR Code) -->
-                <div th:if="${user.role.name() == 'PATIENT'}" class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div class="md:col-span-2 space-y-6">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div class="space-y-3">
-                                <p class="text-gray-700">
-                                    <strong><i class="fas fa-user text-primary mr-2"></i> Name:</strong> 
-                                    <span th:text="${user.name}"></span>
-                                </p>
-                                <p class="text-gray-700">
-                                    <strong><i class="fas fa-envelope text-primary mr-2"></i> Email:</strong> 
-                                    <span th:text="${user.email}"></span>
-                                </p>
-                                <p th:if="${user.contactNumber}" class="text-gray-700">
-                                    <strong><i class="fas fa-phone text-primary mr-2"></i> Contact:</strong> 
-                                    <span th:text="${user.contactNumber}"></span>
-                                </p>
-                            </div>
-                            <div class="space-y-3">
-                                <p th:if="${user.dateOfBirth}" class="text-gray-700">
-                                    <strong><i class="fas fa-calendar text-primary mr-2"></i> Date of Birth:</strong> 
-                                    <span th:text="${#temporals.format(user.dateOfBirth, 'dd-MM-yyyy')}"></span>
-                                </p>
-                                <p th:if="${user.gender}" class="text-gray-700">
-                                    <strong><i class="fas fa-venus-mars text-primary mr-2"></i> Gender:</strong> 
-                                    <span th:text="${user.gender}"></span>
-                                </p>
-                                <p th:if="${user.address}" class="text-gray-700">
-                                    <strong><i class="fas fa-map-marker-alt text-primary mr-2"></i> Address:</strong> 
-                                    <span th:text="${user.address}"></span>
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- QR Code Section (Only for PATIENT) -->
-                    <div class="flex flex-col items-center justify-center border-l border-gray-200 pl-6">
-                        <h6 class="text-lg font-semibold text-gray-800 mb-3">
-                            <i class="fas fa-qrcode text-primary mr-2"></i>Your QR Code
-                        </h6>
-                        <div class="bg-white p-4 rounded-lg border-2 border-primary shadow-md">
-                            <img th:if="${user.qrCode}" th:src="${user.qrCode}" alt="User QR Code" 
-                                 class="w-48 h-48 object-contain">
-                            <div th:unless="${user.qrCode}" class="w-48 h-48 flex items-center justify-center bg-gray-100 rounded">
-                                <p class="text-gray-500 text-sm text-center">QR Code not available</p>
-                            </div>
-                        </div>
-                        <p class="text-xs text-gray-500 mt-2 text-center">
-                            Show this code to staff for quick identification
-                        </p>
-                    </div>
+                <div class="flex items-center justify-between mb-4">
+                    <h6 class="text-lg font-semibold text-gray-700">
+                        Card Details
+                    </h6>
+                    <a th:href="@{/health-card/download}" 
+                       class="inline-flex items-center bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium transition duration-300 shadow-md hover:shadow-lg">
+                        <i class="fas fa-download mr-2"></i>Download Health Card
+                    </a>
                 </div>
                 
-                <!-- Profile layout for non-PATIENT users (without QR Code) -->
-                <div th:unless="${user.role.name() == 'PATIENT'}" class="space-y-6">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="space-y-3">
-                            <p class="text-gray-700">
-                                <strong><i class="fas fa-user text-primary mr-2"></i> Name:</strong> 
-                                <span th:text="${user.name}"></span>
-                            </p>
-                            <p class="text-gray-700">
-                                <strong><i class="fas fa-envelope text-primary mr-2"></i> Email:</strong> 
-                                <span th:text="${user.email}"></span>
-                            </p>
-                            <p th:if="${user.contactNumber}" class="text-gray-700">
-                                <strong><i class="fas fa-phone text-primary mr-2"></i> Contact:</strong> 
-                                <span th:text="${user.contactNumber}"></span>
-                            </p>
-                        </div>
-                        <div class="space-y-3">
-                            <p th:if="${user.dateOfBirth}" class="text-gray-700">
-                                <strong><i class="fas fa-calendar text-primary mr-2"></i> Date of Birth:</strong> 
-                                <span th:text="${#temporals.format(user.dateOfBirth, 'dd-MM-yyyy')}"></span>
-                            </p>
-                            <p th:if="${user.gender}" class="text-gray-700">
-                                <strong><i class="fas fa-venus-mars text-primary mr-2"></i> Gender:</strong> 
-                                <span th:text="${user.gender}"></span>
-                            </p>
-                            <p th:if="${user.address}" class="text-gray-700">
-                                <strong><i class="fas fa-map-marker-alt text-primary mr-2"></i> Address:</strong> 
-                                <span th:text="${user.address}"></span>
-                            </p>
+                <div class="bg-blue-200 rounded-xl p-6 border border-primary/20">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <!-- Health Card Details -->
+                                <div class="space-y-4">
+                                    <div class="flex items-start">
+                                        <i class="fas fa-id-badge text-primary text-2xl mr-3 mt-1"></i>
+                                        <div>
+                                            <p class="text-sm text-gray-600 font-semibold">Card ID</p>
+                                            <p class="text-gray-800 font-mono text-sm" th:text="${#strings.substring(user.healthCard.id, 0, 12) + '...'}"></p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="flex items-start">
+                                        <i class="fas fa-user-circle text-primary text-2xl mr-3 mt-1"></i>
+                                        <div>
+                                            <p class="text-sm text-gray-600 font-semibold">Patient Name</p>
+                                            <p class="text-gray-800 font-medium" th:text="${user.healthCard.patientName}"></p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="flex items-start">
+                                        <i class="fas fa-calendar-plus text-primary text-2xl mr-3 mt-1"></i>
+                                        <div>
+                                            <p class="text-sm text-gray-600 font-semibold">Issue Date</p>
+                                            <p class="text-gray-800" th:text="${#temporals.format(user.healthCard.createDate, 'dd-MM-yyyy')}"></p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="flex items-start">
+                                        <i class="fas fa-calendar-times text-primary text-2xl mr-3 mt-1"></i>
+                                        <div>
+                                            <p class="text-sm text-gray-600 font-semibold">Expiry Date</p>
+                                            <p class="text-gray-800" th:text="${#temporals.format(user.healthCard.expireDate, 'dd-MM-yyyy')}"></p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="flex items-start">
+                                        <i class="fas fa-circle-check text-primary text-2xl mr-3 mt-1"></i>
+                                        <div>
+                                            <p class="text-sm text-gray-600 font-semibold">Status</p>
+                                            <span th:if="${user.healthCard.status == 'ACTIVE'}" 
+                                                  class="inline-block bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-semibold">
+                                                <i class="fas fa-check-circle mr-1"></i>ACTIVE
+                                            </span>
+                                            <span th:if="${user.healthCard.status != 'ACTIVE'}" 
+                                                  class="inline-block bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-semibold">
+                                                <i class="fas fa-times-circle mr-1"></i>INACTIVE
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- QR Code Preview -->
+                                <div class="flex flex-col items-center justify-center">
+                                    <div class="bg-white p-4 rounded-lg border-2 border-blue-600 shadow-lg">
+                                        <img th:if="${user.healthCard.qrCode}" 
+                                             th:src="${user.healthCard.qrCode}" 
+                                             alt="Health Card QR Code" 
+                                             class="w-48 h-48 object-contain">
+                                        <div th:unless="${user.healthCard.qrCode}" 
+                                             class="w-48 h-48 flex items-center justify-center bg-gray-100 rounded">
+                                            <p class="text-gray-500 text-sm text-center">QR Code not available</p>
+                                        </div>
+                                    </div>
+                                    <p class="text-xs text-gray-600 mt-3 text-center font-medium">
+                                        <i class="fas fa-info-circle mr-1"></i>Show this QR code to staff for verification
+                                    </p>
+                                </div>
+                            </div>
+                            
+                            <!-- Health Card Info Banner -->
+                            <div class="mt-6 bg-white/70 rounded-lg p-4 border border-blue-600">
+                                <p class="text-sm text-gray-700 flex items-start">
+                                    <i class="fas fa-lightbulb text-yellow-500 mr-2 mt-1"></i>
+                                    <span><strong>Note:</strong> Your health card is valid for one year from the issue date. 
+                                    Please download and keep it safe. Present it at the hospital reception for quick identification and service.</span>
+                                </p>
                         </div>
                     </div>
                 </div>
@@ -196,118 +190,229 @@
         </div>
 
         <!-- Quick Actions -->
-        <div>
-            <h4 class="text-2xl font-bold text-gray-800 mb-6">Quick Actions</h4>
+        <div class="bg-white rounded-2xl shadow-lg p-8">
+            <div class="flex items-center justify-between mb-8">
+                <div>
+                    <h4 class="text-3xl font-bold text-gray-800 mb-2">
+                        <i class="fas fa-bolt text-yellow-500 mr-2"></i>Quick Actions
+                    </h4>
+                    <p class="text-gray-600">Select an action to get started</p>
+                </div>
+            </div>
             
             <!-- Patient Actions -->
-            <div th:if="${user.role.name() == 'PATIENT'}" class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div class="bg-white rounded-xl shadow-lg p-6 text-center hover:shadow-xl transform hover:-translate-y-2 transition duration-300">
-                    <i class="fas fa-calendar-plus text-5xl text-blue-500 mb-4"></i>
-                    <h5 class="text-xl font-bold text-gray-800 mb-2">Book Appointment</h5>
-                    <p class="text-gray-600 mb-4">Schedule a new appointment with a doctor</p>
-                    <a href="/appointments/book" class="inline-block bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-medium transition duration-200">
-                        Book Now
-                    </a>
+            <div th:if="${user.role.name() == 'PATIENT'}" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Book Appointment Card -->
+                <div class="group relative bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-white opacity-10 rounded-full -mr-16 -mt-16"></div>
+                    <div class="absolute bottom-0 left-0 w-24 h-24 bg-white opacity-10 rounded-full -ml-12 -mb-12"></div>
+                    <div class="relative p-8 text-center">
+                        <div class="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                            <i class="fas fa-calendar-plus text-4xl text-blue-500"></i>
+                        </div>
+                        <h5 class="text-2xl font-bold text-white mb-3">Book Appointment</h5>
+                        <p class="text-blue-100 mb-6 text-sm">Schedule a new appointment with a doctor</p>
+                        <a href="/appointments/book" class="inline-flex items-center bg-white text-blue-600 px-6 py-3 rounded-xl font-semibold hover:bg-blue-50 transition duration-200 shadow-md">
+                            <span>Book Now</span>
+                            <i class="fas fa-arrow-right ml-2"></i>
+                        </a>
+                    </div>
                 </div>
-                <div class="bg-white rounded-xl shadow-lg p-6 text-center hover:shadow-xl transform hover:-translate-y-2 transition duration-300">
-                    <i class="fas fa-calendar-check text-5xl text-purple-500 mb-4"></i>
-                    <h5 class="text-xl font-bold text-gray-800 mb-2">My Appointments</h5>
-                    <p class="text-gray-600 mb-4">View and manage your appointments</p>
-                    <a href="/appointments/my-appointments" class="inline-block bg-purple-500 hover:bg-purple-600 text-white px-6 py-2 rounded-lg font-medium transition duration-200">
-                        View All
-                    </a>
+
+                <!-- My Appointments Card -->
+                <div class="group relative bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-white opacity-10 rounded-full -mr-16 -mt-16"></div>
+                    <div class="absolute bottom-0 left-0 w-24 h-24 bg-white opacity-10 rounded-full -ml-12 -mb-12"></div>
+                    <div class="relative p-8 text-center">
+                        <div class="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                            <i class="fas fa-calendar-check text-4xl text-purple-500"></i>
+                        </div>
+                        <h5 class="text-2xl font-bold text-white mb-3">My Appointments</h5>
+                        <p class="text-purple-100 mb-6 text-sm">View and manage your appointments</p>
+                        <a href="/appointments/my-appointments" class="inline-flex items-center bg-white text-purple-600 px-6 py-3 rounded-xl font-semibold hover:bg-purple-50 transition duration-200 shadow-md">
+                            <span>View All</span>
+                            <i class="fas fa-arrow-right ml-2"></i>
+                        </a>
+                    </div>
                 </div>
-                <div class="bg-white rounded-xl shadow-lg p-6 text-center hover:shadow-xl transform hover:-translate-y-2 transition duration-300">
-                    <i class="fas fa-file-medical text-5xl text-green-500 mb-4"></i>
-                    <h5 class="text-xl font-bold text-gray-800 mb-2">Medical Records</h5>
-                    <p class="text-gray-600 mb-4">View your medical history and reports</p>
-                    <button class="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-lg font-medium transition duration-200">
-                        View Records
-                    </button>
+          
+                <!-- Medical Records Card -->
+                <div class="group relative bg-gradient-to-br from-green-500 to-green-600 rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-white opacity-10 rounded-full -mr-16 -mt-16"></div>
+                    <div class="absolute bottom-0 left-0 w-24 h-24 bg-white opacity-10 rounded-full -ml-12 -mb-12"></div>
+                    <div class="relative p-8 text-center">
+                        <div class="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                            <i class="fas fa-file-medical text-4xl text-green-500"></i>
+                        </div>
+                        <h5 class="text-2xl font-bold text-white mb-3">Medical Records</h5>
+                        <p class="text-green-100 mb-6 text-sm">View your medical history and reports</p>
+                        <button class="inline-flex items-center bg-white text-green-600 px-6 py-3 rounded-xl font-semibold hover:bg-green-50 transition duration-200 shadow-md">
+                            <span>View Records</span>
+                            <i class="fas fa-arrow-right ml-2"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
 
             <!-- Doctor Actions -->
             <div th:if="${user.role.name() == 'DOCTOR'}" class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div class="bg-white rounded-xl shadow-lg p-6 text-center hover:shadow-xl transform hover:-translate-y-2 transition duration-300">
-                    <i class="fas fa-users text-5xl text-blue-500 mb-4"></i>
-                    <h5 class="text-xl font-bold text-gray-800 mb-2">My Patients</h5>
-                    <p class="text-gray-600 mb-4">View and manage your patients</p>
-                    <button class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-medium transition duration-200">
-                        View Patients
-                    </button>
+                <!-- My Patients Card -->
+                <div class="group relative bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-white opacity-10 rounded-full -mr-16 -mt-16"></div>
+                    <div class="absolute bottom-0 left-0 w-24 h-24 bg-white opacity-10 rounded-full -ml-12 -mb-12"></div>
+                    <div class="relative p-8 text-center">
+                        <div class="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                            <i class="fas fa-users text-4xl text-blue-500"></i>
+                        </div>
+                        <h5 class="text-2xl font-bold text-white mb-3">My Patients</h5>
+                        <p class="text-blue-100 mb-6 text-sm">View and manage your patients</p>
+                        <button class="inline-flex items-center bg-white text-blue-600 px-6 py-3 rounded-xl font-semibold hover:bg-blue-50 transition duration-200 shadow-md">
+                            <span>View Patients</span>
+                            <i class="fas fa-arrow-right ml-2"></i>
+                        </button>
+                    </div>
                 </div>
-                <div class="bg-white rounded-xl shadow-lg p-6 text-center hover:shadow-xl transform hover:-translate-y-2 transition duration-300">
-                    <i class="fas fa-calendar-alt text-5xl text-green-500 mb-4"></i>
-                    <h5 class="text-xl font-bold text-gray-800 mb-2">Appointments</h5>
-                    <p class="text-gray-600 mb-4">Manage your appointment schedule</p>
-                    <button class="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-lg font-medium transition duration-200">
-                        View Schedule
-                    </button>
+
+                <!-- Appointments Card -->
+                <div class="group relative bg-gradient-to-br from-green-500 to-green-600 rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-white opacity-10 rounded-full -mr-16 -mt-16"></div>
+                    <div class="absolute bottom-0 left-0 w-24 h-24 bg-white opacity-10 rounded-full -ml-12 -mb-12"></div>
+                    <div class="relative p-8 text-center">
+                        <div class="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                            <i class="fas fa-calendar-alt text-4xl text-green-500"></i>
+                        </div>
+                        <h5 class="text-2xl font-bold text-white mb-3">Appointments</h5>
+                        <p class="text-green-100 mb-6 text-sm">Manage your appointment schedule</p>
+                        <button class="inline-flex items-center bg-white text-green-600 px-6 py-3 rounded-xl font-semibold hover:bg-green-50 transition duration-200 shadow-md">
+                            <span>View Schedule</span>
+                            <i class="fas fa-arrow-right ml-2"></i>
+                        </button>
+                    </div>
                 </div>
-                <div class="bg-white rounded-xl shadow-lg p-6 text-center hover:shadow-xl transform hover:-translate-y-2 transition duration-300">
-                    <i class="fas fa-prescription text-5xl text-yellow-500 mb-4"></i>
-                    <h5 class="text-xl font-bold text-gray-800 mb-2">Prescriptions</h5>
-                    <p class="text-gray-600 mb-4">Create and manage prescriptions</p>
-                    <button class="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-2 rounded-lg font-medium transition duration-200">
-                        Manage
-                    </button>
+
+                <!-- Prescriptions Card -->
+                <div class="group relative bg-gradient-to-br from-amber-500 to-amber-600 rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-white opacity-10 rounded-full -mr-16 -mt-16"></div>
+                    <div class="absolute bottom-0 left-0 w-24 h-24 bg-white opacity-10 rounded-full -ml-12 -mb-12"></div>
+                    <div class="relative p-8 text-center">
+                        <div class="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                            <i class="fas fa-prescription text-4xl text-amber-500"></i>
+                        </div>
+                        <h5 class="text-2xl font-bold text-white mb-3">Prescriptions</h5>
+                        <p class="text-amber-100 mb-6 text-sm">Create and manage prescriptions</p>
+                        <button class="inline-flex items-center bg-white text-amber-600 px-6 py-3 rounded-xl font-semibold hover:bg-amber-50 transition duration-200 shadow-md">
+                            <span>Manage</span>
+                            <i class="fas fa-arrow-right ml-2"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
 
             <!-- Admin Actions -->
             <div th:if="${user.role.name() == 'ADMIN'}" class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div class="bg-white rounded-xl shadow-lg p-6 text-center hover:shadow-xl transform hover:-translate-y-2 transition duration-300">
-                    <i class="fas fa-users-cog text-5xl text-blue-500 mb-4"></i>
-                    <h5 class="text-xl font-bold text-gray-800 mb-2">User Management</h5>
-                    <p class="text-gray-600 mb-4">Manage doctors, patients, and staff</p>
-                    <button class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-medium transition duration-200">
-                        Manage Users
-                    </button>
+                <!-- User Management Card -->
+                <div class="group relative bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-white opacity-10 rounded-full -mr-16 -mt-16"></div>
+                    <div class="absolute bottom-0 left-0 w-24 h-24 bg-white opacity-10 rounded-full -ml-12 -mb-12"></div>
+                    <div class="relative p-8 text-center">
+                        <div class="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                            <i class="fas fa-users-cog text-4xl text-blue-500"></i>
+                        </div>
+                        <h5 class="text-2xl font-bold text-white mb-3">User Management</h5>
+                        <p class="text-blue-100 mb-6 text-sm">Manage doctors, patients, and staff</p>
+                        <button class="inline-flex items-center bg-white text-blue-600 px-6 py-3 rounded-xl font-semibold hover:bg-blue-50 transition duration-200 shadow-md">
+                            <span>Manage Users</span>
+                            <i class="fas fa-arrow-right ml-2"></i>
+                        </button>
+                    </div>
                 </div>
-                <div class="bg-white rounded-xl shadow-lg p-6 text-center hover:shadow-xl transform hover:-translate-y-2 transition duration-300">
-                    <i class="fas fa-chart-line text-5xl text-green-500 mb-4"></i>
-                    <h5 class="text-xl font-bold text-gray-800 mb-2">Reports</h5>
-                    <p class="text-gray-600 mb-4">View system reports and analytics</p>
-                    <button class="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-lg font-medium transition duration-200">
-                        View Reports
-                    </button>
+
+                <!-- Reports Card -->
+                <div class="group relative bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-white opacity-10 rounded-full -mr-16 -mt-16"></div>
+                    <div class="absolute bottom-0 left-0 w-24 h-24 bg-white opacity-10 rounded-full -ml-12 -mb-12"></div>
+                    <div class="relative p-8 text-center">
+                        <div class="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                            <i class="fas fa-chart-line text-4xl text-emerald-500"></i>
+                        </div>
+                        <h5 class="text-2xl font-bold text-white mb-3">Reports</h5>
+                        <p class="text-emerald-100 mb-6 text-sm">View system reports and analytics</p>
+                        <button class="inline-flex items-center bg-white text-emerald-600 px-6 py-3 rounded-xl font-semibold hover:bg-emerald-50 transition duration-200 shadow-md">
+                            <span>View Reports</span>
+                            <i class="fas fa-arrow-right ml-2"></i>
+                        </button>
+                    </div>
                 </div>
-                <div class="bg-white rounded-xl shadow-lg p-6 text-center hover:shadow-xl transform hover:-translate-y-2 transition duration-300">
-                    <i class="fas fa-cog text-5xl text-yellow-500 mb-4"></i>
-                    <h5 class="text-xl font-bold text-gray-800 mb-2">System Settings</h5>
-                    <p class="text-gray-600 mb-4">Configure system preferences</p>
-                    <button class="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-2 rounded-lg font-medium transition duration-200">
-                        Settings
-                    </button>
+
+                <!-- System Settings Card -->
+                <div class="group relative bg-gradient-to-br from-slate-600 to-slate-700 rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-white opacity-10 rounded-full -mr-16 -mt-16"></div>
+                    <div class="absolute bottom-0 left-0 w-24 h-24 bg-white opacity-10 rounded-full -ml-12 -mb-12"></div>
+                    <div class="relative p-8 text-center">
+                        <div class="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                            <i class="fas fa-cog text-4xl text-slate-600"></i>
+                        </div>
+                        <h5 class="text-2xl font-bold text-white mb-3">System Settings</h5>
+                        <p class="text-slate-100 mb-6 text-sm">Configure system preferences</p>
+                        <button class="inline-flex items-center bg-white text-slate-700 px-6 py-3 rounded-xl font-semibold hover:bg-slate-50 transition duration-200 shadow-md">
+                            <span>Settings</span>
+                            <i class="fas fa-arrow-right ml-2"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
             
             <!-- Staff Actions -->
             <div th:if="${user.role.name() == 'STAFF'}" class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div class="bg-white rounded-xl shadow-lg p-6 text-center hover:shadow-xl transform hover:-translate-y-2 transition duration-300">
-                    <i class="fas fa-qrcode text-5xl text-purple-500 mb-4"></i>
-                    <h5 class="text-xl font-bold text-gray-800 mb-2">Scan QR Code</h5>
-                    <p class="text-gray-600 mb-4">Scan patient QR code to view details</p>
-                    <a th:href="@{/staff/scanner}" class="inline-block bg-purple-500 hover:bg-purple-600 text-white px-6 py-2 rounded-lg font-medium transition duration-200">
-                        Open Scanner
-                    </a>
+                <!-- Scan QR Code Card -->
+                <div class="group relative bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-white opacity-10 rounded-full -mr-16 -mt-16"></div>
+                    <div class="absolute bottom-0 left-0 w-24 h-24 bg-white opacity-10 rounded-full -ml-12 -mb-12"></div>
+                    <div class="relative p-8 text-center">
+                        <div class="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                            <i class="fas fa-qrcode text-4xl text-purple-500"></i>
+                        </div>
+                        <h5 class="text-2xl font-bold text-white mb-3">Scan QR Code</h5>
+                        <p class="text-purple-100 mb-6 text-sm">Scan patient QR code to view details</p>
+                        <a th:href="@{/staff/scanner}" class="inline-flex items-center bg-white text-purple-600 px-6 py-3 rounded-xl font-semibold hover:bg-purple-50 transition duration-200 shadow-md">
+                            <span>Open Scanner</span>
+                            <i class="fas fa-arrow-right ml-2"></i>
+                        </a>
+                    </div>
                 </div>
-                <div class="bg-white rounded-xl shadow-lg p-6 text-center hover:shadow-xl transform hover:-translate-y-2 transition duration-300">
-                    <i class="fas fa-user-check text-5xl text-green-500 mb-4"></i>
-                    <h5 class="text-xl font-bold text-gray-800 mb-2">Check-In Patients</h5>
-                    <p class="text-gray-600 mb-4">Manage patient check-ins</p>
-                    <button class="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-lg font-medium transition duration-200">
-                        View Check-Ins
-                    </button>
+
+                <!-- Check-In Patients Card -->
+                <div class="group relative bg-gradient-to-br from-teal-500 to-teal-600 rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-white opacity-10 rounded-full -mr-16 -mt-16"></div>
+                    <div class="absolute bottom-0 left-0 w-24 h-24 bg-white opacity-10 rounded-full -ml-12 -mb-12"></div>
+                    <div class="relative p-8 text-center">
+                        <div class="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                            <i class="fas fa-user-check text-4xl text-teal-500"></i>
+                        </div>
+                        <h5 class="text-2xl font-bold text-white mb-3">Check-In Patients</h5>
+                        <p class="text-teal-100 mb-6 text-sm">Manage patient check-ins</p>
+                        <button class="inline-flex items-center bg-white text-teal-600 px-6 py-3 rounded-xl font-semibold hover:bg-teal-50 transition duration-200 shadow-md">
+                            <span>View Check-Ins</span>
+                            <i class="fas fa-arrow-right ml-2"></i>
+                        </button>
+                    </div>
                 </div>
-                <div class="bg-white rounded-xl shadow-lg p-6 text-center hover:shadow-xl transform hover:-translate-y-2 transition duration-300">
-                    <i class="fas fa-clipboard-list text-5xl text-blue-500 mb-4"></i>
-                    <h5 class="text-xl font-bold text-gray-800 mb-2">Today's Schedule</h5>
-                    <p class="text-gray-600 mb-4">View appointments and schedules</p>
-                    <button class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-medium transition duration-200">
-                        View Schedule
-                    </button>
+
+                <!-- Today's Schedule Card -->
+                <div class="group relative bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-white opacity-10 rounded-full -mr-16 -mt-16"></div>
+                    <div class="absolute bottom-0 left-0 w-24 h-24 bg-white opacity-10 rounded-full -ml-12 -mb-12"></div>
+                    <div class="relative p-8 text-center">
+                        <div class="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                            <i class="fas fa-clipboard-list text-4xl text-indigo-500"></i>
+                        </div>
+                        <h5 class="text-2xl font-bold text-white mb-3">Today's Schedule</h5>
+                        <p class="text-indigo-100 mb-6 text-sm">View appointments and schedules</p>
+                        <button class="inline-flex items-center bg-white text-indigo-600 px-6 py-3 rounded-xl font-semibold hover:bg-indigo-50 transition duration-200 shadow-md">
+                            <span>View Schedule</span>
+                            <i class="fas fa-arrow-right ml-2"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>

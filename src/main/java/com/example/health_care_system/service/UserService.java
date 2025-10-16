@@ -2,6 +2,7 @@ package com.example.health_care_system.service;
 
 import com.example.health_care_system.dto.LoginRequest;
 import com.example.health_care_system.dto.RegisterRequest;
+import com.example.health_care_system.dto.UpdateProfileRequest;
 import com.example.health_care_system.dto.UserDTO;
 import com.example.health_care_system.model.Patient;
 import com.example.health_care_system.model.Doctor;
@@ -26,6 +27,7 @@ public class UserService {
     private final DoctorRepository doctorRepository;
     private final BCryptPasswordEncoder passwordEncoder;
     private final QRCodeService qrCodeService;
+    private final HealthCardService healthCardService;
     
     public UserDTO registerPatient(RegisterRequest request) {
         // Check if passwords match
@@ -59,6 +61,9 @@ public class UserService {
         savedPatient.setQrCode(qrCode);
         savedPatient = patientRepository.save(savedPatient);
         
+        // Create health card for the patient
+        healthCardService.createHealthCard(savedPatient);
+        
         return convertToDTO(savedPatient);
     }
     
@@ -81,6 +86,11 @@ public class UserService {
                 String qrCode = qrCodeService.generateQRCode(patient.getId());
                 patient.setQrCode(qrCode);
                 patientRepository.save(patient);
+            }
+            
+            // Create health card if not exists
+            if (!healthCardService.getHealthCardByPatientId(patient.getId()).isPresent()) {
+                healthCardService.createHealthCard(patient);
             }
             
             return convertToDTO(patient);
@@ -166,6 +176,11 @@ public class UserService {
             dto.setDateOfBirth(patient.getDateOfBirth());
             dto.setAddress(patient.getAddress());
             dto.setQrCode(patient.getQrCode());
+            
+            // Include health card information
+            healthCardService.getHealthCardByPatientId(patient.getId()).ifPresent(healthCard -> {
+                dto.setHealthCard(healthCardService.convertToDTO(healthCard));
+            });
         }
         
         return dto;
@@ -187,5 +202,143 @@ public class UserService {
         // Try regular User
         return userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
+    }
+    
+    public UserDTO updateProfile(String userId, UpdateProfileRequest request) {
+        // Try to find as Patient first
+        Optional<Patient> patientOptional = patientRepository.findById(userId);
+        if (patientOptional.isPresent()) {
+            Patient patient = patientOptional.get();
+            
+            // Check if email is being changed and if it's already taken by another user
+            if (!patient.getEmail().equals(request.getEmail())) {
+                if (patientRepository.existsByEmail(request.getEmail())) {
+                    throw new RuntimeException("Email already registered");
+                }
+            }
+            
+            // Update patient details
+            patient.setName(request.getName());
+            patient.setEmail(request.getEmail());
+            patient.setContactNumber(request.getContactNumber());
+            patient.setDateOfBirth(request.getDateOfBirth());
+            patient.setGender(request.getGender());
+            patient.setAddress(request.getAddress());
+            patient.setUpdatedAt(LocalDateTime.now());
+            
+            Patient updatedPatient = patientRepository.save(patient);
+            
+            // Update health card if exists
+            healthCardService.getHealthCardByPatientId(patient.getId()).ifPresent(healthCard -> {
+                healthCard.setPatientName(request.getName());
+                healthCard.setUpdatedAt(LocalDateTime.now());
+                healthCardService.updateHealthCard(healthCard);
+            });
+            
+            return convertToDTO(updatedPatient);
+        }
+        
+        // Try to find as Doctor
+        Optional<Doctor> doctorOptional = doctorRepository.findById(userId);
+        if (doctorOptional.isPresent()) {
+            Doctor doctor = doctorOptional.get();
+            
+            // Check if email is being changed and if it's already taken
+            if (!doctor.getEmail().equals(request.getEmail())) {
+                if (doctorRepository.existsByEmail(request.getEmail())) {
+                    throw new RuntimeException("Email already registered");
+                }
+            }
+            
+            // Update doctor details
+            doctor.setName(request.getName());
+            doctor.setEmail(request.getEmail());
+            doctor.setContactNumber(request.getContactNumber());
+            doctor.setGender(request.getGender());
+            doctor.setUpdatedAt(LocalDateTime.now());
+            
+            Doctor updatedDoctor = doctorRepository.save(doctor);
+            return convertToDTO(updatedDoctor);
+        }
+        
+        // Try to find as regular User (ADMIN, STAFF)
+        Optional<User> userOptional = userRepository.findById(userId);
+        if (userOptional.isPresent()) {
+            User user = userOptional.get();
+            
+            // Check if email is being changed and if it's already taken
+            if (!user.getEmail().equals(request.getEmail())) {
+                if (userRepository.existsByEmail(request.getEmail())) {
+                    throw new RuntimeException("Email already registered");
+                }
+            }
+            
+            // Update user details
+            user.setName(request.getName());
+            user.setEmail(request.getEmail());
+            user.setContactNumber(request.getContactNumber());
+            user.setGender(request.getGender());
+            user.setUpdatedAt(LocalDateTime.now());
+            
+            User updatedUser = userRepository.save(user);
+            return convertToDTO(updatedUser);
+        }
+        
+        throw new RuntimeException("User not found");
+    }
+    
+    public void changePassword(String userId, String currentPassword, String newPassword) {
+        // Try to find as Patient first
+        Optional<Patient> patientOptional = patientRepository.findById(userId);
+        if (patientOptional.isPresent()) {
+            Patient patient = patientOptional.get();
+            
+            // Verify current password
+            if (!passwordEncoder.matches(currentPassword, patient.getPassword())) {
+                throw new RuntimeException("Current password is incorrect");
+            }
+            
+            // Update password
+            patient.setPassword(passwordEncoder.encode(newPassword));
+            patient.setUpdatedAt(LocalDateTime.now());
+            patientRepository.save(patient);
+            return;
+        }
+        
+        // Try to find as Doctor
+        Optional<Doctor> doctorOptional = doctorRepository.findById(userId);
+        if (doctorOptional.isPresent()) {
+            Doctor doctor = doctorOptional.get();
+            
+            // Verify current password
+            if (!passwordEncoder.matches(currentPassword, doctor.getPassword())) {
+                throw new RuntimeException("Current password is incorrect");
+            }
+            
+            // Update password
+            doctor.setPassword(passwordEncoder.encode(newPassword));
+            doctor.setUpdatedAt(LocalDateTime.now());
+            doctorRepository.save(doctor);
+            return;
+        }
+        
+        // Try to find as regular User (ADMIN, STAFF)
+        Optional<User> userOptional = userRepository.findById(userId);
+        if (userOptional.isPresent()) {
+            User user = userOptional.get();
+            
+            // Verify current password
+            if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+                throw new RuntimeException("Current password is incorrect");
+            }
+            
+            // Update password
+            user.setPassword(passwordEncoder.encode(newPassword));
+            user.setUpdatedAt(LocalDateTime.now());
+            userRepository.save(user);
+            return;
+        }
+        
+        throw new RuntimeException("User not found");
     }
 }
