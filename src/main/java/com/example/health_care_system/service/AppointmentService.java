@@ -3,11 +3,14 @@ package com.example.health_care_system.service;
 import com.example.health_care_system.model.Appointment;
 import com.example.health_care_system.model.Doctor;
 import com.example.health_care_system.model.Patient;
+import com.example.health_care_system.model.TimeSlotReservation;
 import com.example.health_care_system.repository.AppointmentRepository;
 import com.example.health_care_system.repository.DoctorRepository;
 import com.example.health_care_system.repository.PatientRepository;
+import com.example.health_care_system.repository.TimeSlotReservationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -27,6 +30,9 @@ public class AppointmentService {
     @Autowired
     private PatientRepository patientRepository;
     
+    @Autowired
+    private TimeSlotReservationRepository reservationRepository;
+    
     // Working hours configuration
     private static final LocalTime WORKING_START = LocalTime.of(9, 0);  // 9:00 AM
     private static final LocalTime WORKING_END = LocalTime.of(17, 0);   // 5:00 PM
@@ -36,8 +42,27 @@ public class AppointmentService {
     
     /**
      * Get available time slots for a doctor on a specific date
+     * Excludes booked appointments and currently reserved slots
      */
     public List<LocalTime> getAvailableTimeSlots(String doctorId, LocalDate date) {
+        // Validate date is not in the past
+        if (date.isBefore(LocalDate.now())) {
+            throw new RuntimeException("Cannot book appointments for past dates");
+        }
+        return getAvailableTimeSlots(doctorId, date, null);
+    }
+    
+    /**
+     * Get available time slots for a doctor on a specific date
+     * Excludes booked appointments and reserved slots (except for the specified patient)
+     * @param excludePatientId - Patient ID to exclude from reservation check (their own reservation)
+     */
+    public List<LocalTime> getAvailableTimeSlots(String doctorId, LocalDate date, String excludePatientId) {
+        // Validate date is not in the past
+        if (date.isBefore(LocalDate.now())) {
+            throw new RuntimeException("Cannot book appointments for past dates");
+        }
+        
         List<LocalTime> allSlots = generateAllTimeSlots();
         
         // Get existing appointments for this doctor on this date
@@ -55,9 +80,24 @@ public class AppointmentService {
             .map(apt -> apt.getAppointmentDateTime().toLocalTime())
             .collect(Collectors.toSet());
         
-        // Filter out booked slots
+        // Get active reservations for this doctor (excluding the current patient)
+        List<TimeSlotReservation> activeReservations = reservationRepository
+            .findByDoctorIdAndStatus(
+                doctorId, 
+                TimeSlotReservation.ReservationStatus.ACTIVE
+            );
+        
+        // Filter reservations for the specific date and exclude current patient's reservations
+        Set<LocalTime> reservedSlots = activeReservations.stream()
+            .filter(res -> res.getSlotDateTime().toLocalDate().equals(date))
+            .filter(res -> excludePatientId == null || !res.getPatientId().equals(excludePatientId))
+            .map(res -> res.getSlotDateTime().toLocalTime())
+            .collect(Collectors.toSet());
+        
+        // Filter out booked and reserved slots
         List<LocalTime> availableSlots = allSlots.stream()
             .filter(slot -> !bookedSlots.contains(slot))
+            .filter(slot -> !reservedSlots.contains(slot))
             .collect(Collectors.toList());
         
         // If the date is today, filter out past time slots
@@ -69,6 +109,29 @@ public class AppointmentService {
         }
         
         return availableSlots;
+    }
+    
+    /**
+     * Get reserved time slots for a doctor on a specific date (by other users)
+     * @param excludePatientId - Patient ID to exclude from reserved slots (their own reservation)
+     */
+    public List<LocalTime> getReservedTimeSlots(String doctorId, LocalDate date, String excludePatientId) {
+        // Get active reservations for this doctor
+        List<TimeSlotReservation> activeReservations = reservationRepository
+            .findByDoctorIdAndStatus(
+                doctorId, 
+                TimeSlotReservation.ReservationStatus.ACTIVE
+            );
+        
+        // Filter reservations for the specific date and exclude current patient's reservations
+        List<LocalTime> reservedSlots = activeReservations.stream()
+            .filter(res -> res.getSlotDateTime().toLocalDate().equals(date))
+            .filter(res -> excludePatientId == null || !res.getPatientId().equals(excludePatientId))
+            .map(res -> res.getSlotDateTime().toLocalTime())
+            .sorted()
+            .collect(Collectors.toList());
+        
+        return reservedSlots;
     }
     
     /**
@@ -106,6 +169,7 @@ public class AppointmentService {
     /**
      * Book an appointment
      */
+    @Transactional
     public Appointment bookAppointment(
             String patientId,
             String patientName,
@@ -122,7 +186,23 @@ public class AppointmentService {
         Patient patient = patientRepository.findById(patientId)
             .orElseThrow(() -> new RuntimeException("Patient not found"));
         
-        // Check if the time slot is still available
+        // CRITICAL: Check if appointment already exists for this exact time slot (prevent double booking)
+        List<Appointment> existingAppointments = appointmentRepository
+            .findByDoctorIdAndAppointmentDateTimeBetween(
+                doctorId, 
+                appointmentDateTime.minusSeconds(1), 
+                appointmentDateTime.plusSeconds(1)
+            );
+        
+        // Check if any scheduled appointment exists for this slot
+        boolean slotAlreadyBooked = existingAppointments.stream()
+            .anyMatch(apt -> apt.getStatus() == Appointment.AppointmentStatus.SCHEDULED);
+        
+        if (slotAlreadyBooked) {
+            throw new RuntimeException("This time slot has just been booked by another patient. Please select a different time.");
+        }
+        
+        // Additional validation: Check if the time slot is in the available slots
         LocalDate date = appointmentDateTime.toLocalDate();
         List<LocalTime> availableSlots = getAvailableTimeSlots(doctorId, date);
         

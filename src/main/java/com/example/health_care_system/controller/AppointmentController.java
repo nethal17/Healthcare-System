@@ -6,9 +6,11 @@ import com.example.health_care_system.model.Doctor;
 import com.example.health_care_system.model.Hospital;
 import com.example.health_care_system.model.Patient;
 import com.example.health_care_system.model.Payment;
+import com.example.health_care_system.model.TimeSlotReservation;
 import com.example.health_care_system.service.AppointmentService;
 import com.example.health_care_system.service.PaymentService;
 import com.example.health_care_system.service.PdfGenerationService;
+import com.example.health_care_system.service.TimeSlotReservationService;
 import com.example.health_care_system.repository.AppointmentRepository;
 import com.example.health_care_system.repository.HospitalRepository;
 import com.example.health_care_system.repository.DoctorRepository;
@@ -57,6 +59,9 @@ public class AppointmentController {
     
     @Autowired
     private PdfGenerationService pdfGenerationService;
+    
+    @Autowired
+    private TimeSlotReservationService reservationService;
     
     /**
      * Step 1: Show all hospitals to select from
@@ -148,14 +153,25 @@ public class AppointmentController {
         // Get selected date or default to today
         LocalDate selectedDate = date != null ? LocalDate.parse(date) : LocalDate.now();
         
-        // Get available time slots for the selected date
-        List<LocalTime> availableSlots = appointmentService.getAvailableTimeSlots(doctorId, selectedDate);
+        // Get available time slots for the selected date (excluding current patient's reservations)
+        List<LocalTime> availableSlots = appointmentService.getAvailableTimeSlots(doctorId, selectedDate, patient.getId());
+        
+        // Get reserved time slots (by other users)
+        List<LocalTime> reservedSlots = appointmentService.getReservedTimeSlots(doctorId, selectedDate, patient.getId());
         
         // Filter slots into morning (before 1 PM) and afternoon (1 PM and after)
         List<LocalTime> morningSlots = availableSlots.stream()
                 .filter(slot -> slot.getHour() < 13)
                 .toList();
         List<LocalTime> afternoonSlots = availableSlots.stream()
+                .filter(slot -> slot.getHour() >= 13)
+                .toList();
+        
+        // Filter reserved slots into morning and afternoon
+        List<LocalTime> morningReservedSlots = reservedSlots.stream()
+                .filter(slot -> slot.getHour() < 13)
+                .toList();
+        List<LocalTime> afternoonReservedSlots = reservedSlots.stream()
                 .filter(slot -> slot.getHour() >= 13)
                 .toList();
         
@@ -169,6 +185,9 @@ public class AppointmentController {
         model.addAttribute("availableSlots", availableSlots);
         model.addAttribute("morningSlots", morningSlots);
         model.addAttribute("afternoonSlots", afternoonSlots);
+        model.addAttribute("reservedSlots", reservedSlots);
+        model.addAttribute("morningReservedSlots", morningReservedSlots);
+        model.addAttribute("afternoonReservedSlots", afternoonReservedSlots);
         model.addAttribute("availableDates", availableDates);
         model.addAttribute("step", 3);
         
@@ -249,7 +268,13 @@ public class AppointmentController {
         try {
             // For GOVERNMENT hospitals, directly book the appointment without payment
             if ("GOVERNMENT".equals(hospitalType)) {
-                // Parse date and time
+                // Verify reservation is still valid
+            if (!reservationService.isReservationValid(patient.getId(), session.getId())) {
+                redirectAttributes.addFlashAttribute("error", "Your reservation has expired. Please select a time slot again.");
+                return "redirect:/appointments/book";
+            }
+            
+            // Parse date and time
                 LocalDate selectedDate = LocalDate.parse(date);
                 LocalTime selectedTime = LocalTime.parse(time);
                 LocalDateTime appointmentDateTime = LocalDateTime.of(selectedDate, selectedTime);
@@ -388,6 +413,9 @@ public class AppointmentController {
                 appointmentDetails.get("notes")
             );
             
+            // Confirm the reservation (marks it as CONFIRMED)
+            reservationService.confirmReservation(patient.getId(), session.getId());
+            
             // Store payment method selection in session for further processing
             session.setAttribute("selectedPaymentMethod", paymentMethod);
             session.setAttribute("appointmentId", appointment.getId());
@@ -424,7 +452,28 @@ public class AppointmentController {
             }
             
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", "Failed to book appointment: " + e.getMessage());
+            // Release the reservation on error
+            reservationService.cancelReservation(patient.getId(), session.getId());
+            
+            // Provide user-friendly error messages
+            String errorMessage = e.getMessage() != null ? e.getMessage() : "";
+            
+            // Check for MongoDB duplicate key error (race condition at DB level)
+            if (e.getClass().getName().contains("DuplicateKey") || errorMessage.contains("duplicate key")) {
+                redirectAttributes.addFlashAttribute("error", "Sorry! This time slot was just booked by another patient at the same time. Please select a different time.");
+            } else if (errorMessage.contains("just been booked")) {
+                redirectAttributes.addFlashAttribute("error", "Sorry! This time slot was just booked by another patient. Please select a different time.");
+            } else if (errorMessage.contains("no longer available")) {
+                redirectAttributes.addFlashAttribute("error", "This time slot is no longer available. Please select another time.");
+            } else if (errorMessage.contains("past date")) {
+                redirectAttributes.addFlashAttribute("error", "Cannot book appointments for past dates.");
+            } else {
+                redirectAttributes.addFlashAttribute("error", "Failed to book appointment. Please try again or select a different time slot.");
+                // Log the actual error for debugging
+                System.err.println("Appointment booking error: " + e.getClass().getName() + " - " + errorMessage);
+                e.printStackTrace();
+            }
+            
             return "redirect:/appointments/book";
         }
     }
@@ -691,12 +740,117 @@ public class AppointmentController {
      */
     @GetMapping("/available-slots")
     @ResponseBody
-    public List<LocalTime> getAvailableSlots(
+    public Map<String, Object> getAvailableSlots(
             @RequestParam String doctorId,
-            @RequestParam String date) {
+            @RequestParam String date,
+            HttpSession session) {
+        
+        UserDTO user = (UserDTO) session.getAttribute("user");
+        String patientId = user != null ? user.getId() : null;
         
         LocalDate selectedDate = LocalDate.parse(date);
-        return appointmentService.getAvailableTimeSlots(doctorId, selectedDate);
+        List<LocalTime> availableSlots = appointmentService.getAvailableTimeSlots(doctorId, selectedDate, patientId);
+        List<LocalTime> reservedSlots = appointmentService.getReservedTimeSlots(doctorId, selectedDate, patientId);
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("available", availableSlots);
+        response.put("reserved", reservedSlots);
+        
+        return response;
+    }
+    
+    /**
+     * Reserve a time slot temporarily (AJAX endpoint)
+     */
+    @PostMapping("/reserve-slot")
+    @ResponseBody
+    public Map<String, Object> reserveTimeSlot(
+            @RequestParam String doctorId,
+            @RequestParam String date,
+            @RequestParam String time,
+            HttpSession session) {
+        
+        UserDTO user = (UserDTO) session.getAttribute("user");
+        if (user == null) {
+            return Map.of("success", false, "message", "User not logged in");
+        }
+        
+        try {
+            LocalDate selectedDate = LocalDate.parse(date);
+            LocalTime selectedTime = LocalTime.parse(time);
+            LocalDateTime slotDateTime = LocalDateTime.of(selectedDate, selectedTime);
+            
+            TimeSlotReservation reservation = reservationService.reserveTimeSlot(
+                doctorId, 
+                slotDateTime, 
+                user.getId(), 
+                session.getId()
+            );
+            
+            if (reservation == null) {
+                return Map.of(
+                    "success", false, 
+                    "message", "This time slot has just been reserved by another user. Please select a different time."
+                );
+            }
+            
+            long remainingSeconds = reservationService.getRemainingSeconds(user.getId(), session.getId());
+            
+            return Map.of(
+                "success", true, 
+                "message", "Time slot reserved successfully",
+                "reservationId", reservation.getId(),
+                "remainingSeconds", remainingSeconds
+            );
+        } catch (Exception e) {
+            return Map.of("success", false, "message", "Failed to reserve slot: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Release a reserved time slot (AJAX endpoint)
+     */
+    @PostMapping("/release-slot")
+    @ResponseBody
+    public Map<String, Object> releaseTimeSlot(HttpSession session) {
+        UserDTO user = (UserDTO) session.getAttribute("user");
+        if (user == null) {
+            return Map.of("success", false, "message", "User not logged in");
+        }
+        
+        try {
+            reservationService.cancelReservation(user.getId(), session.getId());
+            return Map.of("success", true, "message", "Reservation cancelled");
+        } catch (Exception e) {
+            return Map.of("success", false, "message", e.getMessage());
+        }
+    }
+    
+    /**
+     * Check reservation status (AJAX endpoint)
+     */
+    @GetMapping("/check-reservation")
+    @ResponseBody
+    public Map<String, Object> checkReservation(HttpSession session) {
+        UserDTO user = (UserDTO) session.getAttribute("user");
+        if (user == null) {
+            return Map.of("success", false, "message", "User not logged in");
+        }
+        
+        try {
+            boolean isValid = reservationService.isReservationValid(user.getId(), session.getId());
+            long remainingSeconds = reservationService.getRemainingSeconds(user.getId(), session.getId());
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("isValid", isValid);
+            response.put("remainingSeconds", remainingSeconds);
+            
+            return response;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Map.of("success", false, "message", e.getMessage());
+        }
     }
     
     /**
