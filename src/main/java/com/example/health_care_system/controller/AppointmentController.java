@@ -5,18 +5,27 @@ import com.example.health_care_system.model.Appointment;
 import com.example.health_care_system.model.Doctor;
 import com.example.health_care_system.model.Hospital;
 import com.example.health_care_system.model.Patient;
+import com.example.health_care_system.model.Payment;
 import com.example.health_care_system.service.AppointmentService;
+import com.example.health_care_system.service.PaymentService;
+import com.example.health_care_system.service.PdfGenerationService;
 import com.example.health_care_system.repository.AppointmentRepository;
 import com.example.health_care_system.repository.HospitalRepository;
 import com.example.health_care_system.repository.DoctorRepository;
 import com.example.health_care_system.repository.PatientRepository;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -42,6 +51,12 @@ public class AppointmentController {
     
     @Autowired
     private PatientRepository patientRepository;
+    
+    @Autowired
+    private PaymentService paymentService;
+    
+    @Autowired
+    private PdfGenerationService pdfGenerationService;
     
     /**
      * Step 1: Show all hospitals to select from
@@ -207,7 +222,7 @@ public class AppointmentController {
     }
     
     /**
-     * Process the booking
+     * Store appointment details in session and redirect to payment selection
      */
     @PostMapping("/book/process")
     public String processBooking(
@@ -216,6 +231,7 @@ public class AppointmentController {
             @RequestParam String time,
             @RequestParam(required = false) String purpose,
             @RequestParam(required = false) String notes,
+            @RequestParam(required = false) String hospitalType,
             HttpSession session,
             RedirectAttributes redirectAttributes) {
         
@@ -231,30 +247,324 @@ public class AppointmentController {
         }
         
         try {
+            // For GOVERNMENT hospitals, directly book the appointment without payment
+            if ("GOVERNMENT".equals(hospitalType)) {
+                // Parse date and time
+                LocalDate selectedDate = LocalDate.parse(date);
+                LocalTime selectedTime = LocalTime.parse(time);
+                LocalDateTime appointmentDateTime = LocalDateTime.of(selectedDate, selectedTime);
+                
+                // Create appointment directly
+                Appointment appointment = appointmentService.bookAppointment(
+                    patient.getId(),
+                    patient.getName(),
+                    doctorId,
+                    appointmentDateTime,
+                    purpose != null ? purpose : "",
+                    notes != null ? notes : ""
+                );
+                
+                // Redirect to success page
+                redirectAttributes.addFlashAttribute("success", "Appointment booked successfully!");
+                redirectAttributes.addFlashAttribute("appointmentId", appointment.getId());
+                redirectAttributes.addFlashAttribute("paymentMethod", "FREE"); // Government hospitals are free
+                return "redirect:/appointments/success";
+            }
+            
+            // For PRIVATE hospitals, store appointment details in session and proceed to payment
+            Map<String, String> appointmentDetails = new HashMap<>();
+            appointmentDetails.put("doctorId", doctorId);
+            appointmentDetails.put("date", date);
+            appointmentDetails.put("time", time);
+            appointmentDetails.put("purpose", purpose != null ? purpose : "");
+            appointmentDetails.put("notes", notes != null ? notes : "");
+            
+            session.setAttribute("pendingAppointment", appointmentDetails);
+            
+            // Redirect to payment selection page
+            return "redirect:/appointments/payment-selection?doctorId=" + doctorId;
+            
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Failed to proceed: " + e.getMessage());
+            return "redirect:/appointments/book";
+        }
+    }
+    
+    /**
+     * Show payment method selection page
+     */
+    @GetMapping("/payment-selection")
+    public String showPaymentSelection(
+            @RequestParam String doctorId,
+            Model model,
+            HttpSession session) {
+        
+        UserDTO user = (UserDTO) session.getAttribute("user");
+        if (user == null) {
+            return "redirect:/login";
+        }
+        
+        Patient patient = patientRepository.findById(user.getId()).orElse(null);
+        if (patient == null) {
+            return "redirect:/dashboard";
+        }
+        
+        // Get appointment details from session
+        @SuppressWarnings("unchecked")
+        Map<String, String> appointmentDetails = (Map<String, String>) session.getAttribute("pendingAppointment");
+        if (appointmentDetails == null) {
+            return "redirect:/appointments/book";
+        }
+        
+        // Get doctor and hospital details
+        Doctor doctor = doctorRepository.findById(doctorId).orElse(null);
+        if (doctor == null) {
+            return "redirect:/appointments/book";
+        }
+        
+        Hospital hospital = hospitalRepository.findById(doctor.getHospitalId()).orElse(null);
+        if (hospital == null) {
+            return "redirect:/appointments/book";
+        }
+        
+        model.addAttribute("patient", patient);
+        model.addAttribute("doctor", doctor);
+        model.addAttribute("hospital", hospital);
+        model.addAttribute("appointmentDetails", appointmentDetails);
+        
+        return "appointments/payment-selection";
+    }
+    
+    /**
+     * Process payment method selection and create appointment
+     */
+    @PostMapping("/payment-selection/process")
+    public String processPaymentSelection(
+            @RequestParam String paymentMethod,
+            @RequestParam(required = false) String insuranceProvider,
+            @RequestParam(required = false) String policyNumber,
+            HttpSession session,
+            RedirectAttributes redirectAttributes) {
+        
+        UserDTO user = (UserDTO) session.getAttribute("user");
+        if (user == null) {
+            return "redirect:/login";
+        }
+        
+        Patient patient = patientRepository.findById(user.getId()).orElse(null);
+        if (patient == null) {
+            redirectAttributes.addFlashAttribute("error", "Patient not found");
+            return "redirect:/appointments/book";
+        }
+        
+        // Get appointment details from session
+        @SuppressWarnings("unchecked")
+        Map<String, String> appointmentDetails = (Map<String, String>) session.getAttribute("pendingAppointment");
+        if (appointmentDetails == null) {
+            redirectAttributes.addFlashAttribute("error", "Appointment details not found");
+            return "redirect:/appointments/book";
+        }
+        
+        // If insurance is selected, redirect to InsuranceCollection page
+        if ("INSURANCE".equals(paymentMethod)) {
+            // Keep appointment details in session for later use
+            session.setAttribute("selectedPaymentMethod", paymentMethod);
+            return "redirect:/InsuranceCollection";
+        }
+        
+        try {
             // Parse date and time
-            LocalDate selectedDate = LocalDate.parse(date);
-            LocalTime selectedTime = LocalTime.parse(time);
+            LocalDate selectedDate = LocalDate.parse(appointmentDetails.get("date"));
+            LocalTime selectedTime = LocalTime.parse(appointmentDetails.get("time"));
             LocalDateTime appointmentDateTime = LocalDateTime.of(selectedDate, selectedTime);
             
-            // Create appointment using MongoDB ObjectIds
+            // Create appointment
             Appointment appointment = appointmentService.bookAppointment(
-                patient.getId(),  // Use MongoDB ObjectId
+                patient.getId(),
                 patient.getName(),
-                doctorId,
+                appointmentDetails.get("doctorId"),
                 appointmentDateTime,
-                purpose,
-                notes
+                appointmentDetails.get("purpose"),
+                appointmentDetails.get("notes")
             );
             
-            redirectAttributes.addFlashAttribute("success", "Appointment booked successfully!");
-            redirectAttributes.addFlashAttribute("appointmentId", appointment.getId());  // Use MongoDB ObjectId
+            // Store payment method selection in session for further processing
+            session.setAttribute("selectedPaymentMethod", paymentMethod);
+            session.setAttribute("appointmentId", appointment.getId());
             
-            return "redirect:/appointments/success";
+            // Get doctor and hospital for payment record
+            Doctor doctor = doctorRepository.findById(appointmentDetails.get("doctorId")).orElse(null);
+            if (doctor != null) {
+                Hospital hospital = hospitalRepository.findById(doctor.getHospitalId()).orElse(null);
+                if (hospital != null && hospital.getHospitalCharges() != null) {
+                    // Create payment record for cash payment
+                    if ("CASH".equals(paymentMethod)) {
+                        Payment payment = paymentService.createCashPayment(
+                            appointment.getId(),
+                            hospital.getHospitalCharges()
+                        );
+                        session.setAttribute("paymentId", payment.getId());
+                    }
+                }
+            }
+            
+            // Clear pending appointment from session
+            session.removeAttribute("pendingAppointment");
+            
+            // Redirect based on payment method
+            if ("CARD".equals(paymentMethod)) {
+                // Redirect to card payment page
+                return "redirect:/appointments/payment/card?appointmentId=" + appointment.getId();
+            } else {
+                // For CASH, redirect to success page
+                redirectAttributes.addFlashAttribute("success", "Appointment booked successfully!");
+                redirectAttributes.addFlashAttribute("appointmentId", appointment.getId());
+                redirectAttributes.addFlashAttribute("paymentMethod", paymentMethod);
+                return "redirect:/appointments/success";
+            }
             
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", "Failed to book appointment: " + e.getMessage());
             return "redirect:/appointments/book";
         }
+    }
+    
+    /**
+     * Show card payment page for appointment
+     */
+    @GetMapping("/payment/card")
+    public String showCardPayment(
+            @RequestParam String appointmentId,
+            Model model,
+            HttpSession session,
+            RedirectAttributes redirectAttributes) {
+        
+        UserDTO user = (UserDTO) session.getAttribute("user");
+        if (user == null) {
+            return "redirect:/login";
+        }
+        
+        Patient patient = patientRepository.findById(user.getId()).orElse(null);
+        if (patient == null) {
+            return "redirect:/dashboard";
+        }
+        
+        // Get appointment
+        Appointment appointment = appointmentRepository.findById(appointmentId).orElse(null);
+        if (appointment == null) {
+            redirectAttributes.addFlashAttribute("error", "Appointment not found");
+            return "redirect:/dashboard";
+        }
+        
+        // Get doctor and hospital
+        Doctor doctor = doctorRepository.findById(appointment.getDoctorId()).orElse(null);
+        if (doctor == null) {
+            redirectAttributes.addFlashAttribute("error", "Doctor not found");
+            return "redirect:/dashboard";
+        }
+        
+        Hospital hospital = hospitalRepository.findById(doctor.getHospitalId()).orElse(null);
+        if (hospital == null) {
+            redirectAttributes.addFlashAttribute("error", "Hospital not found");
+            return "redirect:/dashboard";
+        }
+        
+        model.addAttribute("patient", patient);
+        model.addAttribute("appointment", appointment);
+        model.addAttribute("doctor", doctor);
+        model.addAttribute("hospital", hospital);
+        
+        return "appointments/card-payment";
+    }
+    
+    /**
+     * Handle successful payment from Stripe
+     */
+    @GetMapping("/payment/success")
+    public String paymentSuccess(
+            @RequestParam("session_id") String sessionId,
+            HttpSession session,
+            RedirectAttributes redirectAttributes) {
+        
+        UserDTO user = (UserDTO) session.getAttribute("user");
+        if (user == null) {
+            return "redirect:/login";
+        }
+        
+        try {
+            // Get appointment ID from session
+            String appointmentId = (String) session.getAttribute("appointmentId");
+            
+            if (appointmentId == null) {
+                redirectAttributes.addFlashAttribute("error", "Appointment information not found");
+                return "redirect:/dashboard";
+            }
+            
+            // Get appointment to retrieve payment amount
+            Appointment appointment = appointmentRepository.findById(appointmentId).orElse(null);
+            if (appointment == null) {
+                redirectAttributes.addFlashAttribute("error", "Appointment not found");
+                return "redirect:/dashboard";
+            }
+            
+            // Get doctor and hospital to calculate amount
+            Doctor doctor = doctorRepository.findById(appointment.getDoctorId()).orElse(null);
+            if (doctor == null) {
+                redirectAttributes.addFlashAttribute("error", "Doctor not found");
+                return "redirect:/dashboard";
+            }
+            
+            Hospital hospital = hospitalRepository.findById(doctor.getHospitalId()).orElse(null);
+            if (hospital == null) {
+                redirectAttributes.addFlashAttribute("error", "Hospital not found");
+                return "redirect:/dashboard";
+            }
+            
+            // Create payment record in database
+            Payment payment = paymentService.createCardPayment(
+                appointmentId,
+                sessionId,  // Stripe session ID as transaction ID
+                hospital.getHospitalCharges()
+            );
+            
+            // Clear session data
+            session.removeAttribute("appointmentId");
+            session.removeAttribute("selectedPaymentMethod");
+            
+            // Set success message
+            redirectAttributes.addFlashAttribute("success", "Payment completed successfully!");
+            redirectAttributes.addFlashAttribute("appointmentId", appointmentId);
+            redirectAttributes.addFlashAttribute("paymentMethod", "CARD");
+            redirectAttributes.addFlashAttribute("paymentId", payment.getId());
+            
+            return "redirect:/appointments/success";
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            redirectAttributes.addFlashAttribute("error", "Payment processing failed: " + e.getMessage());
+            return "redirect:/dashboard";
+        }
+    }
+    
+    /**
+     * Handle cancelled payment from Stripe
+     */
+    @GetMapping("/payment/cancel")
+    public String paymentCancel(HttpSession session, RedirectAttributes redirectAttributes) {
+        UserDTO user = (UserDTO) session.getAttribute("user");
+        if (user == null) {
+            return "redirect:/login";
+        }
+        
+        String appointmentId = (String) session.getAttribute("appointmentId");
+        
+        redirectAttributes.addFlashAttribute("error", "Payment was cancelled. Please try again.");
+        
+        if (appointmentId != null) {
+            return "redirect:/appointments/payment/card?appointmentId=" + appointmentId;
+        }
+        
+        return "redirect:/dashboard";
     }
     
     /**
@@ -387,5 +697,70 @@ public class AppointmentController {
         
         LocalDate selectedDate = LocalDate.parse(date);
         return appointmentService.getAvailableTimeSlots(doctorId, selectedDate);
+    }
+    
+    /**
+     * Download appointment confirmation PDF
+     */
+    @GetMapping("/download-confirmation/{appointmentId}")
+    public ResponseEntity<byte[]> downloadAppointmentConfirmation(
+            @PathVariable String appointmentId,
+            HttpSession session) {
+        
+        UserDTO user = (UserDTO) session.getAttribute("user");
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        
+        try {
+            // Get appointment details
+            Appointment appointment = appointmentRepository.findById(appointmentId).orElse(null);
+            if (appointment == null) {
+                return ResponseEntity.notFound().build();
+            }
+            
+            // Verify the appointment belongs to the logged-in patient
+            if (!appointment.getPatientId().equals(user.getId())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
+            
+            // Get patient details
+            Patient patient = patientRepository.findById(appointment.getPatientId()).orElse(null);
+            if (patient == null) {
+                return ResponseEntity.notFound().build();
+            }
+            
+            // Get doctor details
+            Doctor doctor = doctorRepository.findById(appointment.getDoctorId()).orElse(null);
+            if (doctor == null) {
+                return ResponseEntity.notFound().build();
+            }
+            
+            // Get hospital details
+            Hospital hospital = hospitalRepository.findById(doctor.getHospitalId()).orElse(null);
+            if (hospital == null) {
+                return ResponseEntity.notFound().build();
+            }
+            
+            // Get payment details if exists (for card payment details in PDF)
+            Payment payment = paymentService.getPaymentByAppointmentId(appointmentId).orElse(null);
+            
+            // Generate PDF
+            byte[] pdfBytes = pdfGenerationService.generateAppointmentConfirmationPdf(
+                appointment, patient, doctor, hospital, payment);
+            
+            // Set headers for PDF download
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_PDF);
+            headers.setContentDisposition(ContentDisposition.builder("attachment")
+                .filename("Appointment_Confirmation_" + appointmentId + ".pdf")
+                .build());
+            headers.setContentLength(pdfBytes.length);
+            
+            return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
+            
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 }

@@ -10,6 +10,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.math.BigDecimal;
 
 @Data
 @NoArgsConstructor
@@ -27,6 +28,9 @@ public class Hospital {
     private Location location;
     
     private ContactInfo contactInfo;
+    
+    // Fixed amount charge for this hospital. For GOVERNMENT type this should be zero.
+    private BigDecimal hospitalCharges = BigDecimal.ZERO;
     
     // Reference to doctors working at this hospital (lazy loaded)
     @DBRef(lazy = true)

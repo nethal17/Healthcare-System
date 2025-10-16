@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 
-public class ProductRequest {
+public class PaymentRequest {
 
     private Long amount;
     private Long quantity;

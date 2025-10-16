@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pending Insurance Request</title>
+    <title>Pending Insurance Request - Healthcare System</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script>
@@ -58,26 +58,27 @@
     </style>
 </head>
 <body class="min-h-screen bg-gray-50">
-<!-- Header -->
-<header class="bg-white shadow-sm">
-    <div class="container mx-auto px-4 py-4 flex justify-between items-center">
-        <div class="flex items-center">
-            <div class="w-10 h-10 bg-primary-blue rounded-lg flex items-center justify-center mr-3">
-                <i class="fas fa-shield-alt text-white"></i>
+
+<!-- Navigation -->
+<nav class="bg-white shadow-lg">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between h-16">
+            <div class="flex items-center">
+                <i class="fas fa-hospital text-blue-600 text-2xl mr-3"></i>
+                <span class="text-xl font-bold text-gray-800">Healthcare System</span>
             </div>
-            <h1 class="text-xl font-bold text-gray-800">MediShield Insurance</h1>
-        </div>
-        <div class="flex items-center space-x-4">
-            <div class="hidden md:flex items-center space-x-2 text-gray-600">
-                <i class="fas fa-user-circle"></i>
-                <span>John Doe</span>
+            <div class="flex items-center space-x-4">
+                <span class="text-gray-700" th:text="${patient?.name}">User Name</span>
+                <a href="/dashboard" class="text-gray-600 hover:text-gray-900">
+                    <i class="fas fa-home"></i> Dashboard
+                </a>
+                <a href="/logout" class="text-red-600 hover:text-red-800">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
             </div>
-            <button class="bg-primary-blue text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition duration-300">
-                <i class="fas fa-sign-out-alt mr-2"></i>Logout
-            </button>
         </div>
     </div>
-</header>
+</nav>
 
 <!-- Main Content -->
 <main class="container mx-auto px-4 py-8">
@@ -99,6 +100,46 @@
                         Your insurance claim has been received and is currently being reviewed by our team.
                         This process typically takes 3-5 business days. You will be contacted directly by our insurance department once a decision has been made.
                     </p>
+                </div>
+
+                <!-- Appointment & Insurance Details -->
+                <div class="mb-8 bg-blue-50 rounded-lg p-6" th:if="${appointment != null}">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                        <i class="fas fa-calendar-check text-primary-blue mr-2"></i>
+                        Appointment Details
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                        <div>
+                            <p class="text-gray-600">Appointment ID</p>
+                            <p class="font-semibold text-gray-900" th:text="${appointment.id}">APT-12345</p>
+                        </div>
+                        <div th:if="${hospital != null}">
+                            <p class="text-gray-600">Hospital</p>
+                            <p class="font-semibold text-gray-900" th:text="${hospital.name}">Hospital Name</p>
+                        </div>
+                        <div th:if="${doctor != null}">
+                            <p class="text-gray-600">Doctor</p>
+                            <p class="font-semibold text-gray-900" th:text="'Dr. ' + ${doctor.name}">Dr. Name</p>
+                        </div>
+                        <div>
+                            <p class="text-gray-600">Date & Time</p>
+                            <p class="font-semibold text-gray-900" 
+                               th:text="${#temporals.format(appointment.appointmentDateTime, 'MMM dd, yyyy - h:mm a')}">Date Time</p>
+                        </div>
+                        <div th:if="${insuranceProvider != null}" class="md:col-span-2 pt-4 border-t border-blue-200">
+                            <p class="text-gray-600 mb-2">Insurance Information</p>
+                            <div class="flex items-center space-x-4">
+                                <div>
+                                    <p class="text-xs text-gray-500">Provider</p>
+                                    <p class="font-semibold text-purple-700" th:text="${insuranceProvider}">Provider</p>
+                                </div>
+                                <div th:if="${policyNumber != null}">
+                                    <p class="text-xs text-gray-500">Policy Number</p>
+                                    <p class="font-semibold text-gray-900" th:text="${policyNumber}">Policy #</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
 
@@ -199,17 +240,14 @@
 
                 <!-- Action Buttons -->
                 <div class="flex flex-col sm:flex-row justify-between pt-6 border-t border-gray-200">
-                    <button class="bg-gray-100 text-gray-800 font-medium py-3 px-6 rounded-lg hover:bg-gray-200 transition duration-300 mb-3 sm:mb-0 flex items-center justify-center">
+                    <a href="/dashboard" class="bg-gray-100 text-gray-800 font-medium py-3 px-6 rounded-lg hover:bg-gray-200 transition duration-300 mb-3 sm:mb-0 flex items-center justify-center">
                         <i class="fas fa-arrow-left mr-2"></i>Back to Dashboard
-                    </button>
+                    </a>
 
-                    <div class="flex space-x-4">
-                        <button class="bg-light-blue text-primary-blue font-medium py-3 px-6 rounded-lg hover:bg-blue-200 transition duration-300 flex items-center justify-center">
-                            <i class="fas fa-download mr-2"></i>Download Receipt
-                        </button>
-                        <button class="bg-primary-blue text-white font-medium py-3 px-6 rounded-lg hover:bg-blue-800 transition duration-300 flex items-center justify-center">
-                            <i class="fas fa-headset mr-2"></i>Contact Support
-                        </button>
+                    <div class="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
+                        <a href="/appointments/my-appointments" class="bg-primary-blue text-white font-medium py-3 px-6 rounded-lg hover:bg-blue-800 transition duration-300 flex items-center justify-center">
+                            <i class="fas fa-calendar-alt mr-2"></i>View Appointments
+                        </a>
                     </div>
                 </div>
             </div>
@@ -282,24 +320,17 @@
 </footer>
 
 <script>
-    // Add interactivity to buttons
+    // Page is ready - navigation handled by anchor tags
     document.addEventListener('DOMContentLoaded', function() {
-        document.querySelectorAll('button').forEach(button => {
-            button.addEventListener('click', function() {
-                const buttonText = this.textContent.trim();
-
-                if (buttonText.includes('Back to Dashboard')) {
-                    alert('Redirecting to dashboard...');
-                    // In real app: window.location.href = '/dashboard';
-                } else if (buttonText.includes('Download Receipt')) {
-                    alert('Downloading receipt...');
-                    // In real app: trigger download
-                } else if (buttonText.includes('Contact Support')) {
-                    alert('Opening support options...');
-                    // In real app: show contact options
-                }
-            });
-        });
+        console.log('Pending Insurance Request page loaded');
+        
+        // Optional: Add animation when page loads
+        const statusCard = document.querySelector('.pending-pulse');
+        if (statusCard) {
+            setTimeout(() => {
+                statusCard.classList.add('animate-in');
+            }, 100);
+        }
     });
 </script>
 </body>

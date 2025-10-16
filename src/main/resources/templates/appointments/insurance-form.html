@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Insurance Information - Healthcare System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <i class="fas fa-hospital text-blue-600 text-2xl mr-3"></i>
+                    <span class="text-xl font-bold text-gray-800">Healthcare System</span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span class="text-gray-700" th:text="${patient.name}">User Name</span>
+                    <a href="/dashboard" class="text-gray-600 hover:text-gray-900">
+                        <i class="fas fa-home"></i> Dashboard
+                    </a>
+                    <a href="/logout" class="text-red-600 hover:text-red-800">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Page Header -->
+        <div class="text-center mb-8">
+            <div class="inline-flex items-center justify-center w-16 h-16 bg-purple-100 rounded-full mb-4">
+                <i class="fas fa-shield-alt text-purple-600 text-3xl"></i>
+            </div>
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">Insurance Information</h1>
+            <p class="text-gray-600">Please provide your insurance details for the appointment</p>
+        </div>
+
+        <!-- Appointment Summary Card -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-8" th:if="${hospital != null}">
+            <h2 class="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                <i class="fas fa-file-medical text-purple-600 mr-2"></i>
+                Appointment Summary
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                <div>
+                    <p class="text-gray-600">Hospital</p>
+                    <p class="font-semibold text-gray-900" th:text="${hospital.name}">Hospital Name</p>
+                </div>
+                <div>
+                    <p class="text-gray-600">Doctor</p>
+                    <p class="font-semibold text-gray-900" th:text="'Dr. ' + ${doctor.name}">Doctor Name</p>
+                </div>
+                <div>
+                    <p class="text-gray-600">Specialization</p>
+                    <p class="font-semibold text-purple-600" th:text="${doctor.specialization}">Specialization</p>
+                </div>
+            </div>
+            
+            <!-- Hospital Charges Display (if private) -->
+            <div class="mt-6 pt-4 border-t" th:if="${hospital.type.name() == 'PRIVATE'}">
+                <div class="flex items-center justify-between bg-purple-50 rounded-lg p-4">
+                    <div>
+                        <p class="text-gray-600 text-sm">Hospital Consultation Fee</p>
+                        <p class="text-gray-700 text-xs mt-1">Will be claimed through insurance</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-2xl font-bold text-purple-700" 
+                           th:text="'Rs. ' + ${#numbers.formatDecimal(hospital.hospitalCharges, 1, 2)}">Rs. 0.00</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Insurance Information Form -->
+        <form th:action="@{/InsuranceCollection/process}" method="post" id="insuranceForm">
+            <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-6 flex items-center">
+                    <i class="fas fa-file-medical-alt text-purple-600 mr-2"></i>
+                    Insurance Details
+                </h3>
+                
+                <div class="space-y-6">
+                    <!-- Insurance Provider -->
+                    <div>
+                        <label for="insuranceProvider" class="block text-sm font-medium text-gray-700 mb-2">
+                            Insurance Provider <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" 
+                               id="insuranceProvider" 
+                               name="insuranceProvider"
+                               placeholder="e.g., Blue Cross, United Healthcare, Aetna"
+                               required
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                        <p class="text-xs text-gray-500 mt-1">Enter the name of your insurance company</p>
+                    </div>
+                    
+                    <!-- Policy Number -->
+                    <div>
+                        <label for="policyNumber" class="block text-sm font-medium text-gray-700 mb-2">
+                            Policy Number <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" 
+                               id="policyNumber" 
+                               name="policyNumber"
+                               placeholder="Enter your insurance policy number"
+                               required
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                        <p class="text-xs text-gray-500 mt-1">Found on your insurance card</p>
+                    </div>
+
+                    <!-- Policy Holder Name -->
+                    <div>
+                        <label for="policyHolderName" class="block text-sm font-medium text-gray-700 mb-2">
+                            Policy Holder Name
+                        </label>
+                        <input type="text" 
+                               id="policyHolderName" 
+                               name="policyHolderName"
+                               placeholder="Enter policy holder's full name"
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                        <p class="text-xs text-gray-500 mt-1">Leave blank if you are the policy holder</p>
+                    </div>
+
+                    <!-- Relationship to Patient -->
+                    <div>
+                        <label for="relationshipToPatient" class="block text-sm font-medium text-gray-700 mb-2">
+                            Relationship to Patient
+                        </label>
+                        <select id="relationshipToPatient" 
+                                name="relationshipToPatient"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                            <option value="self">Self</option>
+                            <option value="spouse">Spouse</option>
+                            <option value="parent">Parent</option>
+                            <option value="child">Child</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Important Information -->
+            <div class="bg-yellow-50 border-l-4 border-yellow-400 p-6 rounded-lg mb-6">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-exclamation-triangle text-yellow-600 text-2xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <h3 class="text-lg font-semibold text-yellow-800 mb-2">Important Information</h3>
+                        <ul class="text-sm text-yellow-700 space-y-2">
+                            <li class="flex items-start">
+                                <i class="fas fa-check mr-2 mt-1"></i>
+                                <span>Your insurance coverage will be verified by our staff</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-check mr-2 mt-1"></i>
+                                <span>You may be responsible for any amounts not covered by your insurance</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-check mr-2 mt-1"></i>
+                                <span>Bring your insurance card on the day of your appointment</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-check mr-2 mt-1"></i>
+                                <span>A notification will be sent once your insurance is verified</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex justify-between items-center">
+                <a href="/appointments/book" 
+                   class="text-purple-600 hover:text-purple-800 font-semibold">
+                    <i class="fas fa-arrow-left mr-2"></i>Cancel & Go Back
+                </a>
+                
+                <button type="submit" 
+                        id="submitButton"
+                        class="px-8 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold shadow-lg transition-colors duration-200">
+                    <i class="fas fa-check-circle mr-2"></i>Submit Insurance Details
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        document.getElementById('insuranceForm').addEventListener('submit', function(e) {
+            const button = document.getElementById('submitButton');
+            button.disabled = true;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Processing...';
+        });
+    </script>
+</body>
+</html>

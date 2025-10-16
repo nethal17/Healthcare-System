@@ -258,6 +258,8 @@ public class DataInitializer {
         Hospital hospital1 = new Hospital();
         hospital1.setName("City Medical Center");
         hospital1.setType(Hospital.HospitalType.PRIVATE);
+    // Private hospitals charge a fixed amount
+    hospital1.setHospitalCharges(new java.math.BigDecimal("5000.00"));
         
         Hospital.Location location1 = new Hospital.Location();
         location1.setAddress("123 Main Street");
@@ -303,6 +305,8 @@ public class DataInitializer {
         Hospital hospital2 = new Hospital();
         hospital2.setName("General Hospital");
         hospital2.setType(Hospital.HospitalType.GOVERNMENT);
+    // Government hospitals do not charge
+    hospital2.setHospitalCharges(java.math.BigDecimal.ZERO);
         
         Hospital.Location location2 = new Hospital.Location();
         location2.setAddress("456 Hospital Road");
@@ -348,6 +352,8 @@ public class DataInitializer {
         Hospital hospital3 = new Hospital();
         hospital3.setName("National Hospital");
         hospital3.setType(Hospital.HospitalType.GOVERNMENT);
+    // Government hospitals do not charge
+    hospital3.setHospitalCharges(java.math.BigDecimal.ZERO);
         
         Hospital.Location location3 = new Hospital.Location();
         location3.setAddress("789 Regent Street");
