@@ -30,10 +30,6 @@ public class User {
 
     private String contactNumber;
     
-    private boolean active = true;
-    
-    private String healthCardId; // Reference to HealthCard
-    
     private LocalDateTime createdAt;
     
     private LocalDateTime updatedAt;

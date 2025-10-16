@@ -19,5 +19,5 @@ public class UserDTO {
     private String gender;
     private String address;
     private String contactNumber;
-    private HealthCardDTO healthCard; // User's health card
+    private String qrCode; // Base64 encoded QR code image
 }

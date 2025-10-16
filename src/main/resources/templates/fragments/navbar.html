@@ -46,7 +46,7 @@
 
                 <!-- User Info -->
                 <div th:if="${user != null}" class="flex items-center space-x-4">
-                    <a th:href="@{/profile}" class="flex items-center space-x-3 hover:opacity-90">
+                    <div class="flex items-center space-x-3">
                         <!-- Avatar -->
                         <div class="w-10 h-10 rounded-full bg-gradient-to-r from-primary to-secondary flex items-center justify-center text-white font-bold">
                             <span th:text="${#strings.substring(user.name, 0, 1)}">U</span>
@@ -54,8 +54,13 @@
                         <!-- User Details -->
                         <div class="hidden lg:block">
                             <div class="text-sm font-medium text-white" th:text="${user.name}">User Name</div>
+                            <div class="text-xs text-gray-400">
+                                <span th:if="${user.role.name() == 'PATIENT'}" class="inline-block bg-green-500 text-white px-2 py-1 rounded-full text-xs">Patient</span>
+                                <span th:if="${user.role.name() == 'DOCTOR'}" class="inline-block bg-blue-500 text-white px-2 py-1 rounded-full text-xs">Doctor</span>
+                                <span th:if="${user.role.name() == 'ADMIN'}" class="inline-block bg-red-500 text-white px-2 py-1 rounded-full text-xs">Admin</span>
+                            </div>
                         </div>
-                    </a>
+                    </div>
                     <!-- Logout Button -->
                     <a th:href="@{/logout}" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition duration-200">
                         <i class="fas fa-sign-out-alt mr-1"></i> Logout
