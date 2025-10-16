@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Appointment - Step 2</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <i class="fas fa-hospital text-blue-600 text-2xl mr-3"></i>
+                    <span class="text-xl font-bold text-gray-800">Healthcare System</span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span class="text-gray-700" th:text="${patient.name}">User Name</span>
+                    <a href="/dashboard" class="text-gray-600 hover:text-gray-900">
+                        <i class="fas fa-home"></i> Dashboard
+                    </a>
+                    <a href="/logout" class="text-red-600 hover:text-red-800">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Progress Steps -->
+        <div class="mb-8">
+            <div class="flex items-center justify-center">
+                <!-- Step 1 -->
+                <div class="flex items-center">
+                    <div class="flex items-center justify-center w-10 h-10 bg-green-600 text-white rounded-full font-bold">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <span class="ml-2 text-green-600 font-semibold">Select Hospital</span>
+                </div>
+                
+                <div class="w-24 h-1 bg-green-600 mx-4"></div>
+                
+                <!-- Step 2 -->
+                <div class="flex items-center">
+                    <div class="flex items-center justify-center w-10 h-10 bg-blue-600 text-white rounded-full font-bold">
+                        2
+                    </div>
+                    <span class="ml-2 text-blue-600 font-semibold">Select Doctor</span>
+                </div>
+                
+                <div class="w-24 h-1 bg-gray-300 mx-4"></div>
+                
+                <!-- Step 3 -->
+                <div class="flex items-center">
+                    <div class="flex items-center justify-center w-10 h-10 bg-gray-300 text-gray-600 rounded-full font-bold">
+                        3
+                    </div>
+                    <span class="ml-2 text-gray-500">Select Time Slot</span>
+                </div>
+                
+                <div class="w-24 h-1 bg-gray-300 mx-4"></div>
+                
+                <!-- Step 4 -->
+                <div class="flex items-center">
+                    <div class="flex items-center justify-center w-10 h-10 bg-gray-300 text-gray-600 rounded-full font-bold">
+                        4
+                    </div>
+                    <span class="ml-2 text-gray-500">Confirm</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Selected Hospital Info -->
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <div class="flex items-center">
+                <i class="fas fa-hospital text-blue-600 text-2xl mr-3"></i>
+                <div>
+                    <p class="text-sm text-gray-600">Selected Hospital:</p>
+                    <p class="text-lg font-bold text-gray-900" th:text="${hospital.name}">Hospital Name</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Page Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">Select a Doctor</h1>
+            <p class="text-gray-600">Step 2: Choose your preferred doctor</p>
+        </div>
+
+        <!-- Doctors Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div th:each="doctor : ${doctors}" 
+                 class="bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 overflow-hidden">
+                <div class="p-6">
+                    <!-- Doctor Avatar -->
+                    <div class="flex items-center mb-4">
+                        <div class="w-16 h-16 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center">
+                            <i class="fas fa-user-md text-white text-2xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <h3 class="text-xl font-bold text-gray-900" th:text="'Dr. ' + ${doctor.name}">Dr. Name</h3>
+                            <p class="text-sm text-blue-600 font-semibold" th:text="${doctor.specialization}">Specialization</p>
+                        </div>
+                    </div>
+
+                    <!-- Doctor Details -->
+                    <div class="space-y-2 mb-4">
+                        <div class="flex items-center text-sm text-gray-600">
+                            <i class="fas fa-id-badge mr-2 text-gray-400"></i>
+                            <span th:text="${doctor.id}">Doctor ID</span>
+                        </div>
+                        
+                        <div class="flex items-center text-sm text-gray-600">
+                            <i class="fas fa-envelope mr-2 text-gray-400"></i>
+                            <span th:text="${doctor.email}">Email</span>
+                        </div>
+                        
+                        <div class="flex items-center text-sm text-gray-600" th:if="${doctor.contactNumber != null}">
+                            <i class="fas fa-phone mr-2 text-gray-400"></i>
+                            <span th:text="${doctor.contactNumber}">Phone</span>
+                        </div>
+                        
+                        <div class="flex items-center text-sm text-gray-600" th:if="${doctor.gender != null}">
+                            <i class="fas fa-venus-mars mr-2 text-gray-400"></i>
+                            <span th:text="${doctor.gender}">Gender</span>
+                        </div>
+                    </div>
+
+                    <!-- Experience Info -->
+                    <div class="bg-gray-50 rounded p-3 mb-4">
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="text-gray-600">Appointments:</span>
+                            <span class="font-semibold text-gray-900" 
+                                  th:text="${doctor.appointments != null ? doctor.appointments.size() : 0}">0</span>
+                        </div>
+                    </div>
+
+                    <!-- Select Button -->
+                    <a th:href="@{/appointments/book/select-timeslot(hospitalId=${hospital.id}, doctorId=${doctor.id})}"
+                       class="block w-full text-center bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded transition-colors duration-200">
+                        <i class="fas fa-arrow-right mr-2"></i>Select Doctor
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- No Doctors Message -->
+        <div th:if="${doctors == null || doctors.isEmpty()}" 
+             class="text-center py-12">
+            <i class="fas fa-user-md text-gray-300 text-6xl mb-4"></i>
+            <p class="text-gray-500 text-lg mb-4">No doctors available at this hospital.</p>
+            <a href="/appointments/book" class="text-blue-600 hover:text-blue-800">
+                <i class="fas fa-arrow-left mr-2"></i>Select Different Hospital
+            </a>
+        </div>
+
+        <!-- Navigation -->
+        <div class="flex justify-between mt-8">
+            <a href="/appointments/book" class="text-blue-600 hover:text-blue-800">
+                <i class="fas fa-arrow-left mr-2"></i>Back to Hospitals
+            </a>
+            <a href="/dashboard" class="text-gray-600 hover:text-gray-900">
+                <i class="fas fa-times mr-2"></i>Cancel Booking
+            </a>
+        </div>
+    </div>
+</body>
+</html>

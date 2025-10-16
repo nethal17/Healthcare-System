@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Appointments</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <i class="fas fa-hospital text-blue-600 text-2xl mr-3"></i>
+                    <span class="text-xl font-bold text-gray-800">Healthcare System</span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span class="text-gray-700" th:text="${patient.name}">User Name</span>
+                    <a href="/dashboard" class="text-gray-600 hover:text-gray-900">
+                        <i class="fas fa-home"></i> Dashboard
+                    </a>
+                    <a href="/logout" class="text-red-600 hover:text-red-800">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Page Header -->
+        <div class="flex justify-between items-center mb-8">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900">My Appointments</h1>
+                <p class="text-gray-600 mt-1">View and manage your appointments</p>
+            </div>
+            <a href="/appointments/book" 
+               class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold shadow-lg transition-colors duration-200">
+                <i class="fas fa-plus-circle mr-2"></i>Book New Appointment
+            </a>
+        </div>
+
+        <!-- Appointments List -->
+        <div class="space-y-4">
+            <!-- Individual Appointment Card -->
+            <div th:each="appointment : ${appointments}" 
+                 class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden">
+                <div class="flex flex-col md:flex-row">
+                    <!-- Left Side - Date/Time -->
+                    <div class="md:w-48 bg-gradient-to-br p-6 flex flex-col justify-center items-center text-white"
+                         th:classappend="${appointment.status.name() == 'SCHEDULED'} ? 'from-blue-500 to-blue-600' : (${appointment.status.name() == 'COMPLETED'} ? 'from-green-500 to-green-600' : (${appointment.status.name() == 'CANCELLED'} ? 'from-red-500 to-red-600' : 'from-gray-500 to-gray-600'))">
+                        <i class="fas fa-calendar-alt text-4xl mb-2"></i>
+                        <p class="text-2xl font-bold" th:text="${#temporals.format(appointment.appointmentDateTime, 'dd')}">15</p>
+                        <p class="text-lg" th:text="${#temporals.format(appointment.appointmentDateTime, 'MMM yyyy')}">Oct 2025</p>
+                        <p class="text-sm mt-2" th:text="${#temporals.format(appointment.appointmentDateTime, 'EEEE')}">Monday</p>
+                        <div class="mt-3 bg-white/20 px-3 py-1 rounded-full">
+                            <i class="fas fa-clock mr-1"></i>
+                            <span th:text="${#temporals.format(appointment.appointmentDateTime, 'h:mm a')}">10:00 AM</span>
+                        </div>
+                    </div>
+
+                    <!-- Right Side - Details -->
+                    <div class="flex-1 p-6">
+                        <div class="flex justify-between items-start mb-4">
+                            <div>
+                                <h3 class="text-xl font-bold text-gray-900 mb-1" th:text="'Dr. ' + ${appointment.doctorName}">Dr. Smith</h3>
+                                <p class="text-gray-600" th:text="${appointment.purpose}">General Consultation</p>
+                            </div>
+                            <span class="px-3 py-1 text-sm font-semibold rounded-full"
+                                  th:classappend="${appointment.status.name() == 'SCHEDULED'} ? 'bg-blue-100 text-blue-800' : (${appointment.status.name() == 'COMPLETED'} ? 'bg-green-100 text-green-800' : (${appointment.status.name() == 'CANCELLED'} ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'))"
+                                  th:text="${appointment.status}">
+                                Status
+                            </span>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div class="flex items-center text-sm text-gray-600">
+                                <i class="fas fa-id-card mr-2 text-gray-400"></i>
+                                <span>Appointment ID: <span class="font-mono font-semibold" th:text="${appointment.id}">APT12345678</span></span>
+                            </div>
+                            <div class="flex items-center text-sm text-gray-600">
+                                <i class="fas fa-user-md mr-2 text-gray-400"></i>
+                                <span>Doctor ID: <span th:text="${appointment.doctorId}">D12345678</span></span>
+                            </div>
+                        </div>
+
+                        <div th:if="${appointment.notes != null && !appointment.notes.isEmpty()}" 
+                             class="bg-gray-50 rounded p-3 mb-4">
+                            <p class="text-sm text-gray-600 mb-1"><i class="fas fa-sticky-note mr-1"></i> Notes:</p>
+                            <p class="text-sm text-gray-800" th:text="${appointment.notes}">Notes content</p>
+                        </div>
+
+                        <!-- Cancellation Window Warning (if applicable) -->
+                        <div th:if="${appointment.status.name() == 'SCHEDULED' && hoursRemaining.containsKey(appointment.id)}" 
+                             class="bg-yellow-50 border-l-4 border-yellow-400 p-3 mb-3">
+                            <div class="flex items-center">
+                                <i class="fas fa-clock text-yellow-600 mr-2"></i>
+                                <p class="text-xs text-yellow-800">
+                                    <span class="font-semibold">Cancellation window:</span>
+                                    <span th:text="${hoursRemaining.get(appointment.id)} + ' hour(s) remaining'">X hours remaining</span>
+                                    to cancel online
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-between">
+                            <div class="text-xs text-gray-500">
+                                <span>Created: </span>
+                                <span th:text="${#temporals.format(appointment.createdAt, 'MMM dd, yyyy h:mm a')}">Oct 10, 2025</span>
+                            </div>
+
+                            <!-- Action Buttons -->
+                            <div class="flex space-x-2" th:if="${appointment.status.name() == 'SCHEDULED'}">
+                                <button onclick="cancelAppointment(this)" 
+                                        th:attr="data-appointment-id=${appointment.id}"
+                                        class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm rounded transition-colors duration-200">
+                                    <i class="fas fa-times-circle mr-1"></i>Cancel
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- No Appointments Message -->
+        <div th:if="${appointments == null || appointments.isEmpty()}" 
+             class="text-center py-16">
+            <i class="fas fa-calendar-times text-gray-300 text-8xl mb-6"></i>
+            <h2 class="text-2xl font-bold text-gray-900 mb-2">No Appointments Yet</h2>
+            <p class="text-gray-600 mb-6">You haven't booked any appointments. Start by booking your first appointment.</p>
+            <a href="/appointments/book" 
+               class="inline-block px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold shadow-lg transition-colors duration-200">
+                <i class="fas fa-plus-circle mr-2"></i>Book Your First Appointment
+            </a>
+        </div>
+
+        <!-- Back to Dashboard -->
+        <div class="text-center mt-8">
+            <a href="/dashboard" class="text-blue-600 hover:text-blue-800 font-semibold">
+                <i class="fas fa-arrow-left mr-2"></i>Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Cancel Confirmation Modal -->
+    <div id="cancelModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+            <div class="p-6">
+                <div class="flex items-center mb-4">
+                    <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mr-4">
+                        <i class="fas fa-exclamation-triangle text-red-600 text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900">Cancel Appointment?</h3>
+                </div>
+                <p class="text-gray-600 mb-6">Are you sure you want to cancel this appointment? This action cannot be undone.</p>
+                <div class="flex justify-end space-x-3">
+                    <button onclick="closeModal()" 
+                            class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
+                        No, Keep It
+                    </button>
+                    <button onclick="confirmCancel()" 
+                            id="confirmCancelBtn"
+                            class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg">
+                        Yes, Cancel Appointment
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contact Hospital Modal (6-hour window expired) -->
+    <div id="contactHospitalModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-xl max-w-lg w-full mx-4">
+            <div class="p-6">
+                <div class="flex items-center mb-4">
+                    <div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mr-4">
+                        <i class="fas fa-clock text-yellow-600 text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900">Cannot Cancel Online</h3>
+                </div>
+                
+                <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
+                    <p class="text-sm text-yellow-800" id="cancellationReason">
+                        You can only cancel appointments within 6 hours of booking.
+                    </p>
+                </div>
+
+                <div class="mb-4">
+                    <h4 class="font-semibold text-gray-900 mb-3">Please Contact the Hospital:</h4>
+                    <div class="space-y-3 bg-gray-50 rounded-lg p-4">
+                        <div class="flex items-start">
+                            <i class="fas fa-hospital text-blue-600 mt-1 mr-3"></i>
+                            <div>
+                                <p class="text-xs text-gray-500">Hospital</p>
+                                <p class="font-semibold text-gray-900" id="contactHospitalName">-</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start">
+                            <i class="fas fa-phone text-green-600 mt-1 mr-3"></i>
+                            <div>
+                                <p class="text-xs text-gray-500">Phone</p>
+                                <a href="#" id="contactHospitalPhone" class="font-semibold text-blue-600 hover:underline">-</a>
+                            </div>
+                        </div>
+                        <div class="flex items-start">
+                            <i class="fas fa-envelope text-purple-600 mt-1 mr-3"></i>
+                            <div>
+                                <p class="text-xs text-gray-500">Email</p>
+                                <a href="#" id="contactHospitalEmail" class="font-semibold text-blue-600 hover:underline">-</a>
+                            </div>
+                        </div>
+                        <div class="flex items-start" id="websiteContainer">
+                            <i class="fas fa-globe text-indigo-600 mt-1 mr-3"></i>
+                            <div>
+                                <p class="text-xs text-gray-500">Website</p>
+                                <a href="#" target="_blank" id="contactHospitalWebsite" class="font-semibold text-blue-600 hover:underline">-</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-end">
+                    <button onclick="closeContactHospitalModal()" 
+                            class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg">
+                        Got It
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Toast -->
+    <div id="successToast" class="hidden fixed top-4 right-4 bg-green-600 text-white px-6 py-4 rounded-lg shadow-lg z-50">
+        <div class="flex items-center">
+            <i class="fas fa-check-circle text-2xl mr-3"></i>
+            <span id="toastMessage">Appointment cancelled successfully</span>
+        </div>
+    </div>
+
+    <!-- Error Toast -->
+    <div id="errorToast" class="hidden fixed top-4 right-4 bg-red-600 text-white px-6 py-4 rounded-lg shadow-lg z-50">
+        <div class="flex items-center">
+            <i class="fas fa-exclamation-circle text-2xl mr-3"></i>
+            <span id="errorMessage">Failed to cancel appointment</span>
+        </div>
+    </div>
+
+    <script>
+        let appointmentToCancel = null;
+
+        function cancelAppointment(button) {
+            appointmentToCancel = button.getAttribute('data-appointment-id');
+            document.getElementById('cancelModal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('cancelModal').classList.add('hidden');
+            appointmentToCancel = null;
+        }
+
+        function closeContactHospitalModal() {
+            document.getElementById('contactHospitalModal').classList.add('hidden');
+        }
+
+        function confirmCancel() {
+            if (!appointmentToCancel) return;
+
+            const confirmBtn = document.getElementById('confirmCancelBtn');
+            confirmBtn.disabled = true;
+            confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Cancelling...';
+
+            fetch(`/appointments/cancel/${appointmentToCancel}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                closeModal();
+                
+                if (data.success) {
+                    showToast('successToast', data.message || 'Appointment cancelled successfully');
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                } else if (data.cannotCancel) {
+                    // Show contact hospital modal
+                    showContactHospitalModal(data);
+                } else {
+                    showToast('errorToast', data.message || 'Failed to cancel appointment');
+                }
+            })
+            .catch(error => {
+                closeModal();
+                showToast('errorToast', 'An error occurred. Please try again.');
+            })
+            .finally(() => {
+                confirmBtn.disabled = false;
+                confirmBtn.innerHTML = 'Yes, Cancel Appointment';
+            });
+        }
+
+        function showContactHospitalModal(data) {
+            // Set reason text
+            document.getElementById('cancellationReason').textContent = data.reason || 
+                'You can only cancel appointments within 6 hours of booking.';
+            
+            // Set hospital information
+            document.getElementById('contactHospitalName').textContent = data.hospitalName || 'Hospital';
+            
+            const phoneElement = document.getElementById('contactHospitalPhone');
+            if (data.hospitalPhone && data.hospitalPhone !== 'Not available') {
+                phoneElement.textContent = data.hospitalPhone;
+                phoneElement.href = 'tel:' + data.hospitalPhone;
+            } else {
+                phoneElement.textContent = 'Not available';
+                phoneElement.removeAttribute('href');
+            }
+            
+            const emailElement = document.getElementById('contactHospitalEmail');
+            if (data.hospitalEmail && data.hospitalEmail !== 'Not available') {
+                emailElement.textContent = data.hospitalEmail;
+                emailElement.href = 'mailto:' + data.hospitalEmail;
+            } else {
+                emailElement.textContent = 'Not available';
+                emailElement.removeAttribute('href');
+            }
+            
+            const websiteElement = document.getElementById('contactHospitalWebsite');
+            const websiteContainer = document.getElementById('websiteContainer');
+            if (data.hospitalWebsite && data.hospitalWebsite !== 'Not available') {
+                websiteElement.textContent = data.hospitalWebsite;
+                websiteElement.href = data.hospitalWebsite;
+                websiteContainer.classList.remove('hidden');
+            } else {
+                websiteContainer.classList.add('hidden');
+            }
+            
+            // Show the modal
+            document.getElementById('contactHospitalModal').classList.remove('hidden');
+        }
+
+        function showToast(toastId, message) {
+            const toast = document.getElementById(toastId);
+            const messageElement = toastId === 'successToast' ? 
+                document.getElementById('toastMessage') : 
+                document.getElementById('errorMessage');
+            
+            messageElement.textContent = message;
+            toast.classList.remove('hidden');
+            
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
