@@ -31,7 +31,14 @@ public class DataInitializer {
         return args -> {
             // Only initialize data if database is empty
             if (userRepository.count() > 0) {
-                log.info("✅ Database already contains data. Skipping initialization.");
+                log.info("✅ Database already contains data. Skipping user initialization.");
+                
+                // Check if medical records exist, if not create them
+                if (medicalRecordRepository.count() == 0) {
+                    log.info("📋 No medical records found. Creating sample medical records...");
+                    createSampleMedicalRecords();
+                }
+                
                 return;
             }
             
@@ -197,6 +204,9 @@ public class DataInitializer {
             
             // Create sample hospitals with fresh data
             createSampleHospitals();
+            
+            // Create sample medical records
+            createSampleMedicalRecords();
             
             log.info("Data initialization completed!");
         };
@@ -375,5 +385,95 @@ public class DataInitializer {
         log.info("   ✓ National Hospital created with " + savedHospital3.getDoctors().size() + " doctors");
         
         log.info("✅ All hospitals created successfully!");
+    }
+    
+    private void createSampleMedicalRecords() {
+        log.info("📋 Creating sample medical records...");
+        
+        // Get all patients and doctors
+        java.util.List<Patient> allPatients = patientRepository.findAll();
+        java.util.List<Doctor> allDoctors = doctorRepository.findAll();
+        
+        if (allPatients.isEmpty() || allDoctors.isEmpty()) {
+            log.warn("   ⚠ No patients or doctors found. Skipping medical records creation.");
+            return;
+        }
+        
+        // Create medical records for each patient
+        int recordCount = 0;
+        
+        for (int i = 0; i < Math.min(allPatients.size(), 5); i++) {
+            Patient patient = allPatients.get(i);
+            
+            // Create 2-3 medical records per patient with different doctors
+            for (int j = 0; j < 3; j++) {
+                Doctor doctor = allDoctors.get((i + j) % allDoctors.size());
+                
+                MedicalRecord record = new MedicalRecord();
+                record.setPatientId(patient.getId());
+                record.setPatientName(patient.getName());
+                record.setDoctorId(doctor.getId());
+                record.setDoctorName(doctor.getName());
+                record.setRecordDate(java.time.LocalDate.now().minusDays((i * 3 + j) * 10));
+                
+                // Set diagnosis, prescription, and notes based on doctor's specialization
+                String specialization = doctor.getSpecialization() != null ? doctor.getSpecialization() : "General Medicine";
+                switch (specialization) {
+                    case "Cardiology":
+                        record.setDiagnosis("Hypertension - Stage 1");
+                        record.setPrescription("Lisinopril 10mg - Once daily, Aspirin 81mg - Once daily");
+                        record.setNotes("Patient advised to monitor blood pressure daily. Follow-up in 3 months. Recommended lifestyle changes: reduce salt intake, regular exercise.");
+                        break;
+                    case "Pediatrics":
+                        record.setDiagnosis("Common Cold with mild fever");
+                        record.setPrescription("Paracetamol 250mg - Every 6 hours if fever persists, Vitamin C supplements");
+                        record.setNotes("Keep patient hydrated. Rest is advised. Return if symptoms worsen or persist beyond 7 days.");
+                        break;
+                    case "Dermatology":
+                        record.setDiagnosis("Atopic Dermatitis (Eczema)");
+                        record.setPrescription("Hydrocortisone cream 1% - Apply twice daily, Moisturizer - Apply after bathing");
+                        record.setNotes("Avoid known allergens and irritants. Use fragrance-free products. Follow-up in 2 weeks.");
+                        break;
+                    case "Orthopedics":
+                        record.setDiagnosis("Lower back pain - Muscle strain");
+                        record.setPrescription("Ibuprofen 400mg - Three times daily with food, Physical therapy recommended");
+                        record.setNotes("Apply heat/ice alternately. Avoid heavy lifting. Core strengthening exercises recommended. Review in 2 weeks.");
+                        break;
+                    case "Neurology":
+                        record.setDiagnosis("Tension-type headache");
+                        record.setPrescription("Paracetamol 500mg - As needed, Relaxation techniques");
+                        record.setNotes("Stress management recommended. Maintain regular sleep schedule. Avoid caffeine. Follow-up if headaches increase in frequency.");
+                        break;
+                    case "General Medicine":
+                        record.setDiagnosis("Annual Health Checkup - All parameters normal");
+                        record.setPrescription("Multivitamin supplements - Once daily");
+                        record.setNotes("Patient is in good health. Continue regular exercise and balanced diet. Next checkup in 12 months.");
+                        break;
+                    case "Oncology":
+                        record.setDiagnosis("Routine cancer screening - No abnormalities detected");
+                        record.setPrescription("No medication required");
+                        record.setNotes("All screening tests normal. Continue healthy lifestyle. Next screening in 12 months as per guidelines.");
+                        break;
+                    case "Psychiatry":
+                        record.setDiagnosis("Mild anxiety disorder");
+                        record.setPrescription("Sertraline 50mg - Once daily in morning, Cognitive Behavioral Therapy sessions");
+                        record.setNotes("Patient responding well to treatment. Continue therapy sessions weekly. Review medication in 6 weeks.");
+                        break;
+                    default:
+                        record.setDiagnosis("General consultation");
+                        record.setPrescription("No specific medication prescribed");
+                        record.setNotes("Routine checkup completed. Patient advised on general health maintenance.");
+                }
+                
+                record.setCreatedAt(LocalDateTime.now());
+                record.setUpdatedAt(LocalDateTime.now());
+                
+                medicalRecordRepository.save(record);
+                recordCount++;
+            }
+        }
+        
+        log.info("   ✓ Created {} medical records", recordCount);
+        log.info("✅ All medical records created successfully!");
     }
 }

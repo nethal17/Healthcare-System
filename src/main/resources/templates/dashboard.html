@@ -246,16 +246,16 @@
                         </div>
                         <h5 class="text-2xl font-bold text-white mb-3">Medical Records</h5>
                         <p class="text-green-100 mb-6 text-sm">View your medical history and reports</p>
-                        <button class="inline-flex items-center bg-white text-green-600 px-6 py-3 rounded-xl font-semibold hover:bg-green-50 transition duration-200 shadow-md">
+                        <a href="/medical-records" class="inline-flex items-center bg-white text-green-600 px-6 py-3 rounded-xl font-semibold hover:bg-green-50 transition duration-200 shadow-md">
                             <span>View Records</span>
                             <i class="fas fa-arrow-right ml-2"></i>
-                        </button>
+                        </a>
                     </div>
                 </div>
             </div>
 
             <!-- Doctor Actions -->
-            <div th:if="${user.role.name() == 'DOCTOR'}" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div th:if="${user.role.name() == 'DOCTOR'}" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <!-- My Patients Card -->
                 <div class="group relative bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300">
                     <div class="absolute top-0 right-0 w-32 h-32 bg-white opacity-10 rounded-full -mr-16 -mt-16"></div>
@@ -287,6 +287,23 @@
                             <span>View Schedule</span>
                             <i class="fas fa-arrow-right ml-2"></i>
                         </button>
+                    </div>
+                </div>
+
+                <!-- Medical Records Card -->
+                <div class="group relative bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-white opacity-10 rounded-full -mr-16 -mt-16"></div>
+                    <div class="absolute bottom-0 left-0 w-24 h-24 bg-white opacity-10 rounded-full -ml-12 -mb-12"></div>
+                    <div class="relative p-8 text-center">
+                        <div class="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                            <i class="fas fa-file-medical text-4xl text-purple-500"></i>
+                        </div>
+                        <h5 class="text-2xl font-bold text-white mb-3">Medical Records</h5>
+                        <p class="text-purple-100 mb-6 text-sm">View patient medical records</p>
+                        <a href="/medical-records" class="inline-flex items-center bg-white text-purple-600 px-6 py-3 rounded-xl font-semibold hover:bg-purple-50 transition duration-200 shadow-md">
+                            <span>View Records</span>
+                            <i class="fas fa-arrow-right ml-2"></i>
+                        </a>
                     </div>
                 </div>
 
