@@ -3,8 +3,11 @@ package com.example.health_care_system.service;
 import com.example.health_care_system.dto.LoginRequest;
 import com.example.health_care_system.dto.RegisterRequest;
 import com.example.health_care_system.dto.UserDTO;
+import com.example.health_care_system.model.Patient;
 import com.example.health_care_system.model.User;
 import com.example.health_care_system.model.UserRole;
+import com.example.health_care_system.repository.PatientRepository;
+import com.example.health_care_system.repository.DoctorRepository;
 import com.example.health_care_system.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -29,13 +32,22 @@ class UserServiceTest {
     private UserRepository userRepository;
 
     @Mock
+    private PatientRepository patientRepository;
+
+    @Mock
+    private DoctorRepository doctorRepository;
+
+    @Mock
     private BCryptPasswordEncoder passwordEncoder;
+
+    @Mock
+    private QRCodeService qrCodeService;
 
     @InjectMocks
     private UserService userService;
 
     private RegisterRequest registerRequest;
-    private User user;
+    private Patient patient;
     private LoginRequest loginRequest;
 
     @BeforeEach
@@ -51,20 +63,20 @@ class UserServiceTest {
         registerRequest.setAddress("123 Test Street");
         registerRequest.setContactNumber("0771234567");
 
-        // Setup user
-        user = new User();
-        user.setId("123");
-        user.setName("Test Patient");
-        user.setEmail("patient@test.com");
-        user.setPassword("encodedPassword");
-        user.setRole(UserRole.PATIENT);
-        user.setDateOfBirth(LocalDate.of(1990, 1, 1));
-        user.setGender("Male");
-        user.setAddress("123 Test Street");
-        user.setContactNumber("0771234567");
-        user.setActive(true);
-        user.setCreatedAt(LocalDateTime.now());
-        user.setUpdatedAt(LocalDateTime.now());
+        // Setup patient
+        patient = new Patient();
+        patient.setId("123");
+        patient.setName("Test Patient");
+        patient.setEmail("patient@test.com");
+        patient.setPassword("encodedPassword");
+        patient.setRole(UserRole.PATIENT);
+        patient.setDateOfBirth(LocalDate.of(1990, 1, 1));
+        patient.setGender("Male");
+        patient.setAddress("123 Test Street");
+        patient.setContactNumber("0771234567");
+        patient.setActive(true);
+        patient.setCreatedAt(LocalDateTime.now());
+        patient.setUpdatedAt(LocalDateTime.now());
 
         // Setup login request
         loginRequest = new LoginRequest();
@@ -75,9 +87,10 @@ class UserServiceTest {
     @Test
     void testRegisterPatient_Success() {
         // Given
-        when(userRepository.existsByEmail(registerRequest.getEmail())).thenReturn(false);
+        when(patientRepository.existsByEmail(registerRequest.getEmail())).thenReturn(false);
         when(passwordEncoder.encode(registerRequest.getPassword())).thenReturn("encodedPassword");
-        when(userRepository.save(any(User.class))).thenReturn(user);
+        when(qrCodeService.generateQRCode(any())).thenReturn("qrCodeData");
+        when(patientRepository.save(any(Patient.class))).thenReturn(patient);
 
         // When
         UserDTO result = userService.registerPatient(registerRequest);
@@ -87,20 +100,20 @@ class UserServiceTest {
         assertEquals("Test Patient", result.getName());
         assertEquals("patient@test.com", result.getEmail());
         assertEquals(UserRole.PATIENT, result.getRole());
-        verify(userRepository, times(1)).save(any(User.class));
+        verify(patientRepository, times(2)).save(any(Patient.class));
     }
 
     @Test
     void testRegisterPatient_EmailAlreadyExists() {
         // Given
-        when(userRepository.existsByEmail(registerRequest.getEmail())).thenReturn(true);
+        when(patientRepository.existsByEmail(registerRequest.getEmail())).thenReturn(true);
 
         // When & Then
         RuntimeException exception = assertThrows(RuntimeException.class, () -> {
             userService.registerPatient(registerRequest);
         });
         assertEquals("Email already registered", exception.getMessage());
-        verify(userRepository, never()).save(any(User.class));
+        verify(patientRepository, never()).save(any(Patient.class));
     }
 
     @Test
@@ -119,8 +132,8 @@ class UserServiceTest {
     @Test
     void testLogin_Success() {
         // Given
-        when(userRepository.findByEmail(loginRequest.getEmail())).thenReturn(Optional.of(user));
-        when(passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())).thenReturn(true);
+        when(patientRepository.findByEmail(loginRequest.getEmail())).thenReturn(Optional.of(patient));
+        when(passwordEncoder.matches(loginRequest.getPassword(), patient.getPassword())).thenReturn(true);
 
         // When
         UserDTO result = userService.login(loginRequest);
@@ -135,6 +148,8 @@ class UserServiceTest {
     @Test
     void testLogin_InvalidEmail() {
         // Given
+        when(patientRepository.findByEmail(loginRequest.getEmail())).thenReturn(Optional.empty());
+        when(doctorRepository.findByEmail(loginRequest.getEmail())).thenReturn(Optional.empty());
         when(userRepository.findByEmail(loginRequest.getEmail())).thenReturn(Optional.empty());
 
         // When & Then
@@ -147,8 +162,8 @@ class UserServiceTest {
     @Test
     void testLogin_InvalidPassword() {
         // Given
-        when(userRepository.findByEmail(loginRequest.getEmail())).thenReturn(Optional.of(user));
-        when(passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())).thenReturn(false);
+        when(patientRepository.findByEmail(loginRequest.getEmail())).thenReturn(Optional.of(patient));
+        when(passwordEncoder.matches(loginRequest.getPassword(), patient.getPassword())).thenReturn(false);
 
         // When & Then
         RuntimeException exception = assertThrows(RuntimeException.class, () -> {
@@ -160,8 +175,8 @@ class UserServiceTest {
     @Test
     void testLogin_InactiveAccount() {
         // Given
-        user.setActive(false);
-        when(userRepository.findByEmail(loginRequest.getEmail())).thenReturn(Optional.of(user));
+        patient.setActive(false);
+        when(patientRepository.findByEmail(loginRequest.getEmail())).thenReturn(Optional.of(patient));
 
         // When & Then
         RuntimeException exception = assertThrows(RuntimeException.class, () -> {
@@ -173,7 +188,7 @@ class UserServiceTest {
     @Test
     void testGetUserById_Success() {
         // Given
-        when(userRepository.findById("123")).thenReturn(Optional.of(user));
+        when(patientRepository.findById("123")).thenReturn(Optional.of(patient));
 
         // When
         UserDTO result = userService.getUserById("123");
@@ -187,6 +202,8 @@ class UserServiceTest {
     @Test
     void testGetUserById_NotFound() {
         // Given
+        when(patientRepository.findById("123")).thenReturn(Optional.empty());
+        when(doctorRepository.findById("123")).thenReturn(Optional.empty());
         when(userRepository.findById("123")).thenReturn(Optional.empty());
 
         // When & Then
@@ -199,7 +216,7 @@ class UserServiceTest {
     @Test
     void testGetUserByEmail_Success() {
         // Given
-        when(userRepository.findByEmail("patient@test.com")).thenReturn(Optional.of(user));
+        when(patientRepository.findByEmail("patient@test.com")).thenReturn(Optional.of(patient));
 
         // When
         UserDTO result = userService.getUserByEmail("patient@test.com");
