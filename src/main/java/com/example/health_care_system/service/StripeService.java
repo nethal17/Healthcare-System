@@ -16,6 +16,9 @@ public class StripeService {
         @Value("${stripe.secretKey}")
         private String secretKey;
 
+        @Value("${server.port}")
+        private String serverPort;
+
         //stripe -API
         //-> productName , amount , quantity , currency
         //-> return sessionId and url
@@ -52,8 +55,8 @@ public class StripeService {
             SessionCreateParams params =
                     SessionCreateParams.builder()
                             .setMode(SessionCreateParams.Mode.PAYMENT)
-                            .setSuccessUrl("http://localhost:8081/appointments/payment/success?session_id={CHECKOUT_SESSION_ID}")
-                            .setCancelUrl("http://localhost:8081/appointments/payment/cancel")
+                            .setSuccessUrl("http://localhost:" + serverPort + "/appointments/payment/success?session_id={CHECKOUT_SESSION_ID}")
+                            .setCancelUrl("http://localhost:" + serverPort + "/appointments/payment/cancel")
                             .addLineItem(lineItem)
                             .build();
 
