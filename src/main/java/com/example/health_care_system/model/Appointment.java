@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
@@ -12,6 +13,12 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Document(collection = "appointments")
+@CompoundIndex(
+    name = "unique_scheduled_appointment_idx",
+    def = "{'doctorId': 1, 'appointmentDateTime': 1, 'status': 1}",
+    unique = true,
+    partialFilter = "{'status': 'SCHEDULED'}"
+)
 public class Appointment {
     
     @Id

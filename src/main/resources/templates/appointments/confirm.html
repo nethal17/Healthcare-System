@@ -77,6 +77,19 @@
         <div class="text-center mb-8">
             <h1 class="text-3xl font-bold text-gray-900 mb-2">Confirm Your Appointment</h1>
             <p class="text-gray-600">Please review and confirm your appointment details</p>
+            
+            <!-- Reservation Timer -->
+            <div id="reservationTimer" class="mt-4 inline-block bg-yellow-100 border-2 border-yellow-400 rounded-lg px-6 py-3">
+                <div class="flex items-center space-x-3">
+                    <i class="fas fa-clock text-yellow-600 text-xl"></i>
+                    <div>
+                        <p class="text-sm text-yellow-800 font-semibold">Time slot reserved for:</p>
+                        <p class="text-2xl font-bold text-yellow-900">
+                            <span id="minutes">5</span>:<span id="seconds">00</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Appointment Details Card -->
@@ -254,12 +267,165 @@
         </form>
     </div>
 
-    <script>
+    <script th:inline="javascript">
+        const hospitalId = /*[[${hospital.id}]]*/ '';
+        const doctorId = /*[[${doctor.id}]]*/ '';
+        const selectedDate = /*[[${selectedDate}]]*/ '';
+        const selectedTime = /*[[${selectedTime}]]*/ '';
+        
+        let timerInterval;
+        let remainingSeconds = 300; // 5 minutes
+        let checkAttempts = 0;
+        const MAX_CHECK_ATTEMPTS = 3;
+        
+        // Check reservation status and get remaining time
+        function checkReservationStatus() {
+            checkAttempts++;
+            console.log('Checking reservation status, attempt:', checkAttempts);
+            
+            fetch('/appointments/check-reservation')
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Reservation check response:', data); // Debug log
+                    
+                    if (data.success && data.isValid && data.remainingSeconds > 0) {
+                        remainingSeconds = data.remainingSeconds;
+                        console.log('Reservation valid, remaining seconds:', remainingSeconds);
+                        startTimer();
+                    } else if (data.success && !data.isValid && checkAttempts < MAX_CHECK_ATTEMPTS) {
+                        // Reservation not found yet, might be timing issue, retry after short delay
+                        console.log('Reservation not found, retrying in 500ms...');
+                        setTimeout(() => checkReservationStatus(), 500);
+                    } else if (data.success && data.isValid && data.remainingSeconds === 0) {
+                        // Reservation exists but expired
+                        console.warn('Reservation expired');
+                        showExpiredMessage();
+                    } else {
+                        console.warn('Reservation not valid or max attempts reached:', data);
+                        // Start timer with default 5 minutes as fallback
+                        console.log('Starting timer with default 5 minutes (fallback)');
+                        startTimer();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error checking reservation:', error);
+                    // Start timer anyway as fallback - user just made reservation
+                    console.log('Starting timer due to error (fallback)');
+                    startTimer();
+                });
+        }
+        
+        function startTimer() {
+            updateTimerDisplay();
+            
+            timerInterval = setInterval(() => {
+                remainingSeconds--;
+                
+                if (remainingSeconds <= 0) {
+                    clearInterval(timerInterval);
+                    showExpiredMessage();
+                } else {
+                    updateTimerDisplay();
+                    
+                    // Change color when less than 1 minute remaining
+                    if (remainingSeconds <= 60) {
+                        const timerDiv = document.getElementById('reservationTimer');
+                        timerDiv.classList.remove('bg-yellow-100', 'border-yellow-400');
+                        timerDiv.classList.add('bg-red-100', 'border-red-400');
+                        
+                        const icon = timerDiv.querySelector('i');
+                        icon.classList.remove('text-yellow-600');
+                        icon.classList.add('text-red-600');
+                        
+                        const texts = timerDiv.querySelectorAll('p');
+                        texts[0].classList.remove('text-yellow-800');
+                        texts[0].classList.add('text-red-800');
+                        texts[1].classList.remove('text-yellow-900');
+                        texts[1].classList.add('text-red-900');
+                    }
+                }
+            }, 1000);
+        }
+        
+        function updateTimerDisplay() {
+            const minutes = Math.floor(remainingSeconds / 60);
+            const seconds = remainingSeconds % 60;
+            
+            document.getElementById('minutes').textContent = minutes;
+            document.getElementById('seconds').textContent = seconds.toString().padStart(2, '0');
+        }
+        
+        function showExpiredMessage() {
+            const timerDiv = document.getElementById('reservationTimer');
+            timerDiv.innerHTML = `
+                <div class="flex items-center space-x-3">
+                    <i class="fas fa-exclamation-triangle text-red-600 text-xl"></i>
+                    <div>
+                        <p class="text-sm text-red-800 font-semibold">Reservation Expired!</p>
+                        <p class="text-sm text-red-700">Redirecting to time slot selection...</p>
+                    </div>
+                </div>
+            `;
+            timerDiv.classList.remove('bg-yellow-100', 'border-yellow-400');
+            timerDiv.classList.add('bg-red-100', 'border-red-400');
+            
+            // Disable confirm button
+            const confirmButton = document.getElementById('confirmButton');
+            confirmButton.disabled = true;
+            confirmButton.classList.add('opacity-50', 'cursor-not-allowed');
+            
+            // Redirect after 3 seconds
+            setTimeout(() => {
+                window.location.href = `/appointments/book/select-timeslot?hospitalId=${hospitalId}&doctorId=${doctorId}&date=${selectedDate}`;
+            }, 3000);
+        }
+        
+        // Handle form submission
         document.getElementById('bookingForm').addEventListener('submit', function(e) {
+            clearInterval(timerInterval);
             const button = document.getElementById('confirmButton');
             button.disabled = true;
             button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Processing...';
         });
+        
+        // Handle back button - release reservation
+        document.querySelector('a[href*="select-timeslot"]').addEventListener('click', function(e) {
+            e.preventDefault();
+            const href = this.href;
+            
+            fetch('/appointments/release-slot', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                }
+            }).finally(() => {
+                window.location.href = href;
+            });
+        });
+        
+        // Handle cancel button - release reservation
+        document.querySelector('a[href="/dashboard"]').addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            fetch('/appointments/release-slot', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                }
+            }).finally(() => {
+                window.location.href = '/dashboard';
+            });
+        });
+        
+        // Release reservation when navigating away
+        window.addEventListener('beforeunload', function() {
+            if (remainingSeconds > 0) {
+                navigator.sendBeacon('/appointments/release-slot', new URLSearchParams());
+            }
+        });
+        
+        // Start checking reservation on page load
+        checkReservationStatus();
     </script>
 </body>
 </html>
