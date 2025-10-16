@@ -1,6 +1,6 @@
 package com.example.health_care_system.controller;
 
-import com.example.health_care_system.dto.ProductRequest;
+import com.example.health_care_system.dto.PaymentRequest;
 import com.example.health_care_system.dto.StripeResponse;
 import com.example.health_care_system.service.StripeService;
 import org.springframework.http.HttpStatus;
@@ -13,16 +13,16 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/product/v1")
 
-public class ProductCheckoutController {
+public class PaymentCheckoutController {
 
     private StripeService stripeService;
 
-    public ProductCheckoutController(StripeService stripeService) {
+    public PaymentCheckoutController(StripeService stripeService) {
         this.stripeService = stripeService;
     }
 
     @PostMapping("/checkout")
-    public ResponseEntity<StripeResponse> checkoutProducts(@RequestBody ProductRequest productRequest) {
+    public ResponseEntity<StripeResponse> checkoutProducts(@RequestBody PaymentRequest productRequest) {
         StripeResponse stripeResponse = stripeService.checkoutProducts(productRequest);
         return ResponseEntity
                 .status(HttpStatus.OK)

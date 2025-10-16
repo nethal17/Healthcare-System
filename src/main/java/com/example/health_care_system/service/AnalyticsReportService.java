@@ -469,6 +469,8 @@ public class AnalyticsReportService {
         metrics.setType(hospital.getType() != null ? hospital.getType().toString() : "Unknown");
         metrics.setTotalDoctors(hospital.getDoctors() != null ? hospital.getDoctors().size() : 0);
         metrics.setTotalPatients(hospital.getPatients() != null ? hospital.getPatients().size() : 0);
+    // Include hospitalCharges (may be null)
+    metrics.setHospitalCharges(hospital.getHospitalCharges() != null ? hospital.getHospitalCharges() : java.math.BigDecimal.ZERO);
         
         // Calculate total appointments from all doctors
         int totalAppointments = 0;

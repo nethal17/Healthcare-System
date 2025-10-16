@@ -335,6 +335,7 @@ public class AnalyticsReport {
     public static class HospitalMetrics {
         private String hospitalId;
         private String hospitalName;
+    private java.math.BigDecimal hospitalCharges;
         private String type;
         private int totalDoctors;
         private int totalPatients;
@@ -347,6 +348,9 @@ public class AnalyticsReport {
         
         public String getHospitalName() { return hospitalName; }
         public void setHospitalName(String hospitalName) { this.hospitalName = hospitalName; }
+
+    public java.math.BigDecimal getHospitalCharges() { return hospitalCharges; }
+    public void setHospitalCharges(java.math.BigDecimal hospitalCharges) { this.hospitalCharges = hospitalCharges; }
         
         public String getType() { return type; }
         public void setType(String type) { this.type = type; }

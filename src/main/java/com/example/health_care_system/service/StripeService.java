@@ -1,6 +1,6 @@
 package com.example.health_care_system.service;
 
-import com.example.health_care_system.dto.ProductRequest;
+import com.example.health_care_system.dto.PaymentRequest;
 import com.example.health_care_system.dto.StripeResponse;
 import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
@@ -22,7 +22,7 @@ public class StripeService {
 
 
 
-        public StripeResponse checkoutProducts(ProductRequest productRequest) {
+        public StripeResponse checkoutProducts(PaymentRequest productRequest) {
             // Set your secret key. Remember to switch to your live secret key in production!
             Stripe.apiKey = secretKey;
 
@@ -35,8 +35,8 @@ public class StripeService {
             // Create new line item with the above product data and associated price
             SessionCreateParams.LineItem.PriceData priceData =
                     SessionCreateParams.LineItem.PriceData.builder()
-                            .setCurrency(productRequest.getCurrency() != null ? productRequest.getCurrency() : "USD")
-                            .setUnitAmount(productRequest.getAmount()*100)
+                            .setCurrency(productRequest.getCurrency() != null ? productRequest.getCurrency() : "lkr")
+                            .setUnitAmount(productRequest.getAmount())
                             .setProductData(productData)
                             .build();
 
@@ -52,8 +52,8 @@ public class StripeService {
             SessionCreateParams params =
                     SessionCreateParams.builder()
                             .setMode(SessionCreateParams.Mode.PAYMENT)
-                            .setSuccessUrl("http://localhost:8081/success")
-                            .setCancelUrl("http://localhost:8081/cancel")
+                            .setSuccessUrl("http://localhost:8081/appointments/payment/success?session_id={CHECKOUT_SESSION_ID}")
+                            .setCancelUrl("http://localhost:8081/appointments/payment/cancel")
                             .addLineItem(lineItem)
                             .build();
 
@@ -63,6 +63,25 @@ public class StripeService {
                 session = Session.create(params);
             } catch (StripeException e) {
                 //log the error
+                System.err.println("Stripe error: " + e.getMessage());
+                e.printStackTrace();
+                return StripeResponse
+                        .builder()
+                        .status("FAILED")
+                        .message("Payment session creation failed: " + e.getMessage())
+                        .sessionId(null)
+                        .sessionUrl(null)
+                        .build();
+            }
+
+            if (session == null) {
+                return StripeResponse
+                        .builder()
+                        .status("FAILED")
+                        .message("Payment session creation failed")
+                        .sessionId(null)
+                        .sessionUrl(null)
+                        .build();
             }
 
             return StripeResponse

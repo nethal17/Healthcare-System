@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Card Payment - Healthcare System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <i class="fas fa-hospital text-blue-600 text-2xl mr-3"></i>
+                    <span class="text-xl font-bold text-gray-800">Healthcare System</span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span class="text-gray-700" th:text="${patient.name}">User Name</span>
+                    <a href="/dashboard" class="text-gray-600 hover:text-gray-900">
+                        <i class="fas fa-home"></i> Dashboard
+                    </a>
+                    <a href="/logout" class="text-red-600 hover:text-red-800">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Page Header -->
+        <div class="text-center mb-8">
+            <div class="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
+                <i class="fas fa-credit-card text-blue-600 text-3xl"></i>
+            </div>
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">Secure Card Payment</h1>
+            <p class="text-gray-600">Complete your payment to confirm your appointment</p>
+        </div>
+
+        <!-- Payment Summary Card -->
+        <div class="bg-white rounded-lg shadow-lg overflow-hidden mb-6">
+            <!-- Header -->
+            <div class="bg-gradient-to-r from-blue-600 to-blue-700 p-6 text-white">
+                <h2 class="text-2xl font-bold mb-2">Payment Summary</h2>
+                <p class="text-blue-100">Review your payment details</p>
+            </div>
+
+            <!-- Content -->
+            <div class="p-6 space-y-4">
+                <!-- Appointment Details -->
+                <div class="border-b pb-4">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-3 flex items-center">
+                        <i class="fas fa-calendar-check text-blue-600 mr-2"></i>
+                        Appointment Details
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <p class="text-sm text-gray-600">Hospital</p>
+                            <p class="font-semibold text-gray-900" th:text="${hospital.name}">Hospital Name</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600">Doctor</p>
+                            <p class="font-semibold text-gray-900" th:text="'Dr. ' + ${doctor.name}">Doctor Name</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600">Date</p>
+                            <p class="font-semibold text-gray-900" 
+                               th:text="${#temporals.format(appointment.appointmentDateTime, 'MMM dd, yyyy')}">Date</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600">Time</p>
+                            <p class="font-semibold text-gray-900" 
+                               th:text="${#temporals.format(appointment.appointmentDateTime, 'h:mm a')}">Time</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Payment Amount -->
+                <div class="bg-gradient-to-r from-green-50 to-green-100 rounded-lg p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-600 mb-1">Total Amount to Pay</p>
+                            <p class="text-sm text-gray-700">Hospital consultation fee</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-4xl font-bold text-green-700" 
+                               th:text="'Rs. ' + ${#numbers.formatDecimal(hospital.hospitalCharges, 1, 2)}">Rs. 0.00</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment Form Card -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                <i class="fas fa-lock text-green-600 mr-2"></i>
+                Secure Payment via Stripe
+            </h3>
+
+            <form id="paymentForm">
+                <button type="button" 
+                        id="checkoutButton"
+                        onclick="processPayment()"
+                        class="w-full px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold text-lg shadow-lg transition-colors duration-200">
+                    <i class="fas fa-lock mr-2"></i>Pay with Stripe
+                </button>
+            </form>
+
+            <div class="mt-6 text-center text-sm text-gray-600">
+                <p class="flex items-center justify-center">
+                    <i class="fas fa-shield-alt text-green-600 mr-2"></i>
+                    Your payment is secured with 256-bit SSL encryption
+                </p>
+            </div>
+        </div>
+
+        <!-- Security Information -->
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-3 flex items-center">
+                <i class="fas fa-info-circle text-blue-600 mr-2"></i>
+                Payment Information
+            </h3>
+            <div class="space-y-2 text-sm text-gray-700">
+                <p class="flex items-start">
+                    <i class="fas fa-check text-green-600 mr-2 mt-1"></i>
+                    <span>Secure payment processing powered by Stripe</span>
+                </p>
+                <p class="flex items-start">
+                    <i class="fas fa-check text-green-600 mr-2 mt-1"></i>
+                    <span>All major credit and debit cards accepted</span>
+                </p>
+                <p class="flex items-start">
+                    <i class="fas fa-check text-green-600 mr-2 mt-1"></i>
+                    <span>Instant payment confirmation</span>
+                </p>
+                <p class="flex items-start">
+                    <i class="fas fa-check text-green-600 mr-2 mt-1"></i>
+                    <span>Receipt will be sent to your email</span>
+                </p>
+            </div>
+        </div>
+
+        <!-- Back Button -->
+        <div class="text-center">
+            <a th:href="@{/appointments/my-appointments}" 
+               class="text-blue-600 hover:text-blue-800 font-semibold">
+                <i class="fas fa-arrow-left mr-2"></i>Back to My Appointments
+            </a>
+        </div>
+    </div>
+
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        const hospitalCharges = /*[[${hospital.hospitalCharges}]]*/ 0;
+        const hospitalName = /*[[${hospital.name}]]*/ 'Hospital';
+        const appointmentId = /*[[${appointment.id}]]*/ '';
+
+        function processPayment() {
+            const button = document.getElementById('checkoutButton');
+            button.disabled = true;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Processing...';
+
+            // Store appointment ID in sessionStorage before redirecting to Stripe
+            sessionStorage.setItem('paymentAppointmentId', appointmentId);
+            sessionStorage.setItem('paymentAmount', hospitalCharges);
+
+            // Create payment request
+            // Stripe requires amount in smallest currency unit (cents for LKR)
+            const amountInCents = Math.round(hospitalCharges * 100);
+            
+            const paymentRequest = {
+                amount: amountInCents, // Amount in smallest currency unit (cents)
+                quantity: 1,
+                name: 'Hospital Consultation Fee - ' + hospitalName,
+                currency: 'lkr' // Sri Lankan Rupees
+            };
+
+            // Call backend to create Stripe session
+            fetch('/product/v1/checkout', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(paymentRequest)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Stripe response:', data);
+                if (data.status === 'SUCCESS' && data.sessionUrl) {
+                    // Redirect to Stripe checkout
+                    window.location.href = data.sessionUrl;
+                } else {
+                    throw new Error(data.message || 'Failed to create payment session');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Payment processing failed. Please try again. Error: ' + error.message);
+                button.disabled = false;
+                button.innerHTML = '<i class="fas fa-lock mr-2"></i>Pay with Stripe';
+            });
+        }
+        /*]]>*/
+    </script>
+</body>
+</html>
