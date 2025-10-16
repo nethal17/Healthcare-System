@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Appointment - Step 3</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <i class="fas fa-hospital text-blue-600 text-2xl mr-3"></i>
+                    <span class="text-xl font-bold text-gray-800">Healthcare System</span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span class="text-gray-700" th:text="${patient.name}">User Name</span>
+                    <a href="/dashboard" class="text-gray-600 hover:text-gray-900">
+                        <i class="fas fa-home"></i> Dashboard
+                    </a>
+                    <a href="/logout" class="text-red-600 hover:text-red-800">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Progress Steps -->
+        <div class="mb-8">
+            <div class="flex items-center justify-center">
+                <!-- Step 1 -->
+                <div class="flex items-center">
+                    <div class="flex items-center justify-center w-10 h-10 bg-green-600 text-white rounded-full font-bold">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <span class="ml-2 text-green-600 font-semibold">Select Hospital</span>
+                </div>
+                
+                <div class="w-24 h-1 bg-green-600 mx-4"></div>
+                
+                <!-- Step 2 -->
+                <div class="flex items-center">
+                    <div class="flex items-center justify-center w-10 h-10 bg-green-600 text-white rounded-full font-bold">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <span class="ml-2 text-green-600 font-semibold">Select Doctor</span>
+                </div>
+                
+                <div class="w-24 h-1 bg-green-600 mx-4"></div>
+                
+                <!-- Step 3 -->
+                <div class="flex items-center">
+                    <div class="flex items-center justify-center w-10 h-10 bg-blue-600 text-white rounded-full font-bold">
+                        3
+                    </div>
+                    <span class="ml-2 text-blue-600 font-semibold">Select Time Slot</span>
+                </div>
+                
+                <div class="w-24 h-1 bg-gray-300 mx-4"></div>
+                
+                <!-- Step 4 -->
+                <div class="flex items-center">
+                    <div class="flex items-center justify-center w-10 h-10 bg-gray-300 text-gray-600 rounded-full font-bold">
+                        4
+                    </div>
+                    <span class="ml-2 text-gray-500">Confirm</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Selection Summary -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <!-- Hospital Info -->
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div class="flex items-center">
+                    <i class="fas fa-hospital text-blue-600 text-2xl mr-3"></i>
+                    <div>
+                        <p class="text-sm text-gray-600">Hospital:</p>
+                        <p class="text-lg font-bold text-gray-900" th:text="${hospital.name}">Hospital Name</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Doctor Info -->
+            <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                <div class="flex items-center">
+                    <i class="fas fa-user-md text-green-600 text-2xl mr-3"></i>
+                    <div>
+                        <p class="text-sm text-gray-600">Doctor:</p>
+                        <p class="text-lg font-bold text-gray-900" th:text="'Dr. ' + ${doctor.name}">Dr. Name</p>
+                        <p class="text-sm text-green-600" th:text="${doctor.specialization}">Specialization</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Page Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">Select Date & Time</h1>
+            <p class="text-gray-600">Step 3: Choose your preferred date and time slot</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Date Selection -->
+            <div class="lg:col-span-1">
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center">
+                        <i class="fas fa-calendar-alt text-blue-600 mr-2"></i>
+                        Select Date
+                    </h3>
+                    <div class="space-y-2">
+                        <div th:each="date : ${availableDates}" 
+                             class="date-option p-3 rounded-lg border-2 cursor-pointer transition-all duration-200"
+                             th:classappend="${date == selectedDate} ? 'border-blue-600 bg-blue-50' : 'border-gray-200 hover:border-blue-300'"
+                             th:data-date="${date}"
+                             onclick="selectDate(this.dataset.date)">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="font-semibold text-gray-900" 
+                                       th:text="${#temporals.format(date, 'EEEE')}">Day</p>
+                                    <p class="text-sm text-gray-600" 
+                                       th:text="${#temporals.format(date, 'MMM dd, yyyy')}">Date</p>
+                                </div>
+                                <div th:if="${date == selectedDate}">
+                                    <i class="fas fa-check-circle text-blue-600 text-xl"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Time Slot Selection -->
+            <div class="lg:col-span-2">
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center">
+                        <i class="fas fa-clock text-blue-600 mr-2"></i>
+                        Available Time Slots
+                        <span class="ml-2 text-sm text-gray-500" 
+                              th:text="${#temporals.format(selectedDate, 'MMM dd, yyyy')}">Date</span>
+                    </h3>
+                    
+                    <!-- Morning Slots -->
+                    <div class="mb-6">
+                        <h4 class="text-md font-semibold text-gray-700 mb-3 flex items-center">
+                            <i class="fas fa-sun text-yellow-500 mr-2"></i>
+                            Morning (9:00 AM - 12:30 PM)
+                        </h4>
+                        <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3" id="morning-slots">
+                            <div th:each="slot : ${morningSlots}">
+                                <button type="button"
+                                        class="time-slot w-full p-3 rounded-lg border-2 border-gray-200 hover:border-blue-600 hover:bg-blue-50 transition-all duration-200 font-semibold text-gray-900"
+                                        th:text="${#temporals.format(slot, 'h:mm a')}"
+                                        th:data-time="${slot}"
+                                        onclick="selectTimeSlot(this.dataset.time)">
+                                    Time
+                                </button>
+                            </div>
+                        </div>
+                        <div th:if="${#lists.isEmpty(morningSlots)}" 
+                             class="text-center py-4 text-gray-500">
+                            <i class="fas fa-times-circle mr-2"></i>No morning slots available
+                        </div>
+                    </div>
+
+                    <!-- Afternoon Slots -->
+                    <div>
+                        <h4 class="text-md font-semibold text-gray-700 mb-3 flex items-center">
+                            <i class="fas fa-cloud-sun text-orange-500 mr-2"></i>
+                            Afternoon (2:00 PM - 5:00 PM)
+                        </h4>
+                        <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3" id="afternoon-slots">
+                            <div th:each="slot : ${afternoonSlots}">
+                                <button type="button"
+                                        class="time-slot w-full p-3 rounded-lg border-2 border-gray-200 hover:border-blue-600 hover:bg-blue-50 transition-all duration-200 font-semibold text-gray-900"
+                                        th:text="${#temporals.format(slot, 'h:mm a')}"
+                                        th:data-time="${slot}"
+                                        onclick="selectTimeSlot(this.dataset.time)">
+                                    Time
+                                </button>
+                            </div>
+                        </div>
+                        <div th:if="${#lists.isEmpty(afternoonSlots)}" 
+                             class="text-center py-4 text-gray-500">
+                            <i class="fas fa-times-circle mr-2"></i>No afternoon slots available
+                        </div>
+                    </div>
+
+                    <!-- No Slots Available -->
+                    <div th:if="${availableSlots == null || availableSlots.isEmpty()}" 
+                         class="text-center py-12">
+                        <i class="fas fa-calendar-times text-gray-300 text-6xl mb-4"></i>
+                        <p class="text-gray-500 text-lg">No time slots available for this date.</p>
+                        <p class="text-gray-400 text-sm mt-2">Please select a different date.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation -->
+        <div class="flex justify-between mt-8">
+            <a th:href="@{/appointments/book/select-doctor(hospitalId=${hospital.id})}" 
+               class="text-blue-600 hover:text-blue-800">
+                <i class="fas fa-arrow-left mr-2"></i>Back to Doctors
+            </a>
+            <a href="/dashboard" class="text-gray-600 hover:text-gray-900">
+                <i class="fas fa-times mr-2"></i>Cancel Booking
+            </a>
+        </div>
+    </div>
+
+    <script th:inline="javascript">
+        const hospitalId = /*[[${hospital.id}]]*/ '';
+        const doctorId = /*[[${doctor.id}]]*/ '';
+        let selectedDate = /*[[${selectedDate}]]*/ '';
+        let selectedTime = null;
+
+        function selectDate(date) {
+            window.location.href = `/appointments/book/select-timeslot?hospitalId=${hospitalId}&doctorId=${doctorId}&date=${date}`;
+        }
+
+        function selectTimeSlot(time) {
+            selectedTime = time;
+            
+            // Remove selection from all slots
+            document.querySelectorAll('.time-slot').forEach(slot => {
+                slot.classList.remove('border-blue-600', 'bg-blue-600', 'text-white');
+                slot.classList.add('border-gray-200', 'text-gray-900');
+            });
+            
+            // Highlight selected slot
+            event.target.classList.remove('border-gray-200', 'text-gray-900');
+            event.target.classList.add('border-blue-600', 'bg-blue-600', 'text-white');
+            
+            // Navigate to confirmation page
+            setTimeout(() => {
+                window.location.href = `/appointments/book/confirm?hospitalId=${hospitalId}&doctorId=${doctorId}&date=${selectedDate}&time=${time}`;
+            }, 300);
+        }
+    </script>
+</body>
+</html>

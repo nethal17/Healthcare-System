@@ -1,6 +1,7 @@
 package com.example.health_care_system.controller;
 
 import com.example.health_care_system.dto.UserDTO;
+import com.example.health_care_system.model.Patient;
 import com.example.health_care_system.model.User;
 import com.example.health_care_system.service.QRCodeService;
 import com.example.health_care_system.service.UserService;
@@ -50,18 +51,25 @@ public class StaffController {
             // Get user details
             User user = userService.getUserEntityById(userId);
             
+            // Only patients have QR codes, so this should be a Patient
+            if (!(user instanceof Patient)) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Invalid QR code - not a patient"));
+            }
+            
+            Patient patient = (Patient) user;
+            
             // Prepare response
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("user", Map.of(
-                "id", user.getId(),
-                "name", user.getName(),
-                "email", user.getEmail(),
-                "role", user.getRole().name(),
-                "dateOfBirth", user.getDateOfBirth() != null ? user.getDateOfBirth().toString() : "",
-                "gender", user.getGender() != null ? user.getGender() : "",
-                "address", user.getAddress() != null ? user.getAddress() : "",
-                "contactNumber", user.getContactNumber() != null ? user.getContactNumber() : ""
+                "id", patient.getId(),
+                "name", patient.getName(),
+                "email", patient.getEmail(),
+                "role", patient.getRole().name(),
+                "dateOfBirth", patient.getDateOfBirth() != null ? patient.getDateOfBirth().toString() : "",
+                "gender", patient.getGender() != null ? patient.getGender() : "",
+                "address", patient.getAddress() != null ? patient.getAddress() : "",
+                "contactNumber", patient.getContactNumber() != null ? patient.getContactNumber() : ""
             ));
             
             return ResponseEntity.ok(response);

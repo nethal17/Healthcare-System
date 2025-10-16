@@ -37,8 +37,8 @@
                     <a th:href="@{/dashboard}" class="text-white bg-white bg-opacity-20 px-4 py-2 rounded-lg text-sm font-semibold backdrop-blur-sm">
                         <i class="fas fa-home mr-2"></i> Dashboard
                     </a>
-                    <a th:if="${user != null && user.role.name() == 'PATIENT'}" href="#" class="text-white hover:bg-white hover:bg-opacity-20 px-4 py-2 rounded-lg text-sm font-medium transition duration-200">
-                        <i class="fas fa-calendar-check mr-2"></i> Appointments
+                    <a th:if="${user != null && user.role.name() == 'PATIENT'}" href="/appointments/my-appointments" class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">
+                        <i class="fas fa-calendar-check mr-1"></i> Appointments
                     </a>
                     <a th:if="${user != null && user.role.name() == 'DOCTOR'}" href="#" class="text-white hover:bg-white hover:bg-opacity-20 px-4 py-2 rounded-lg text-sm font-medium transition duration-200">
                         <i class="fas fa-user-injured mr-2"></i> Patients
@@ -203,9 +203,17 @@
                     <i class="fas fa-calendar-plus text-5xl text-blue-500 mb-4"></i>
                     <h5 class="text-xl font-bold text-gray-800 mb-2">Book Appointment</h5>
                     <p class="text-gray-600 mb-4">Schedule a new appointment with a doctor</p>
-                    <button class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-medium transition duration-200">
+                    <a href="/appointments/book" class="inline-block bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-medium transition duration-200">
                         Book Now
-                    </button>
+                    </a>
+                </div>
+                <div class="bg-white rounded-xl shadow-lg p-6 text-center hover:shadow-xl transform hover:-translate-y-2 transition duration-300">
+                    <i class="fas fa-calendar-check text-5xl text-purple-500 mb-4"></i>
+                    <h5 class="text-xl font-bold text-gray-800 mb-2">My Appointments</h5>
+                    <p class="text-gray-600 mb-4">View and manage your appointments</p>
+                    <a href="/appointments/my-appointments" class="inline-block bg-purple-500 hover:bg-purple-600 text-white px-6 py-2 rounded-lg font-medium transition duration-200">
+                        View All
+                    </a>
                 </div>
                 <div class="bg-white rounded-xl shadow-lg p-6 text-center hover:shadow-xl transform hover:-translate-y-2 transition duration-300">
                     <i class="fas fa-file-medical text-5xl text-green-500 mb-4"></i>
@@ -213,14 +221,6 @@
                     <p class="text-gray-600 mb-4">View your medical history and reports</p>
                     <button class="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-lg font-medium transition duration-200">
                         View Records
-                    </button>
-                </div>
-                <div class="bg-white rounded-xl shadow-lg p-6 text-center hover:shadow-xl transform hover:-translate-y-2 transition duration-300">
-                    <i class="fas fa-pills text-5xl text-yellow-500 mb-4"></i>
-                    <h5 class="text-xl font-bold text-gray-800 mb-2">Prescriptions</h5>
-                    <p class="text-gray-600 mb-4">View and manage your prescriptions</p>
-                    <button class="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-2 rounded-lg font-medium transition duration-200">
-                        View All
                     </button>
                 </div>
             </div>

@@ -33,7 +33,7 @@
                     <a th:href="@{/dashboard}" class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">
                         <i class="fas fa-home mr-1"></i> Dashboard
                     </a>
-                    <a th:if="${user != null && user.role.name() == 'PATIENT'}" href="#" class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">
+                    <a th:if="${user != null && user.role.name() == 'PATIENT'}" th:href="@{/appointments/my-appointments}" class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">
                         <i class="fas fa-calendar-check mr-1"></i> Appointments
                     </a>
                     <a th:if="${user != null && user.role.name() == 'DOCTOR'}" href="#" class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">

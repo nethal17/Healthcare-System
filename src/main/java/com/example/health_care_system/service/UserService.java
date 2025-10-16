@@ -1,14 +1,14 @@
 package com.example.health_care_system.service;
 
-import com.example.health_care_system.dto.ChangePasswordRequest;
-import com.example.health_care_system.dto.HealthCardDTO;
 import com.example.health_care_system.dto.LoginRequest;
 import com.example.health_care_system.dto.RegisterRequest;
-import com.example.health_care_system.dto.UpdateProfileRequest;
 import com.example.health_care_system.dto.UserDTO;
-import com.example.health_care_system.model.HealthCard;
+import com.example.health_care_system.model.Patient;
+import com.example.health_care_system.model.Doctor;
 import com.example.health_care_system.model.User;
 import com.example.health_care_system.model.UserRole;
+import com.example.health_care_system.repository.PatientRepository;
+import com.example.health_care_system.repository.DoctorRepository;
 import com.example.health_care_system.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -22,8 +22,10 @@ import java.util.Optional;
 public class UserService {
     
     private final UserRepository userRepository;
+    private final PatientRepository patientRepository;
+    private final DoctorRepository doctorRepository;
     private final BCryptPasswordEncoder passwordEncoder;
-    private final HealthCardService healthCardService;
+    private final QRCodeService qrCodeService;
     
     public UserDTO registerPatient(RegisterRequest request) {
         // Check if passwords match
@@ -32,70 +34,118 @@ public class UserService {
         }
         
         // Check if email already exists
-        if (userRepository.existsByEmail(request.getEmail())) {
+        if (patientRepository.existsByEmail(request.getEmail())) {
             throw new RuntimeException("Email already registered");
         }
         
-        // Create new user
-        User user = new User();
-        user.setName(request.getName());
-        user.setEmail(request.getEmail());
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setRole(UserRole.PATIENT);
-        user.setDateOfBirth(request.getDateOfBirth());
-        user.setGender(request.getGender());
-        user.setAddress(request.getAddress());
-        user.setContactNumber(request.getContactNumber());
-        user.setActive(true);
-        user.setCreatedAt(LocalDateTime.now());
-        user.setUpdatedAt(LocalDateTime.now());
+        // Create new patient
+        Patient patient = new Patient();
+        patient.setName(request.getName());
+        patient.setEmail(request.getEmail());
+        patient.setPassword(passwordEncoder.encode(request.getPassword()));
+        patient.setRole(UserRole.PATIENT);
+        patient.setDateOfBirth(request.getDateOfBirth());
+        patient.setGender(request.getGender());
+        patient.setAddress(request.getAddress());
+        patient.setContactNumber(request.getContactNumber());
+        patient.setActive(true);
+        patient.setCreatedAt(LocalDateTime.now());
+        patient.setUpdatedAt(LocalDateTime.now());
         
-        User savedUser = userRepository.save(user);
+        Patient savedPatient = patientRepository.save(patient);
         
-        // Generate HealthCard only for PATIENT users
-        if (savedUser.getRole() == UserRole.PATIENT) {
-            HealthCard healthCard = healthCardService.createHealthCard(savedUser);
-            savedUser.setHealthCardId(healthCard.getId());
-            savedUser = userRepository.save(savedUser);
-        }
+        // Generate QR code for patient using MongoDB ObjectId
+        String qrCode = qrCodeService.generateQRCode(savedPatient.getId());
+        savedPatient.setQrCode(qrCode);
+        savedPatient = patientRepository.save(savedPatient);
         
-        return convertToDTO(savedUser);
+        return convertToDTO(savedPatient);
     }
     
     public UserDTO login(LoginRequest request) {
+        // Try to find as Patient first
+        Optional<Patient> patientOptional = patientRepository.findByEmail(request.getEmail());
+        if (patientOptional.isPresent()) {
+            Patient patient = patientOptional.get();
+            
+            if (!patient.isActive()) {
+                throw new RuntimeException("Account is inactive");
+            }
+            
+            if (!passwordEncoder.matches(request.getPassword(), patient.getPassword())) {
+                throw new RuntimeException("Invalid email or password");
+            }
+            
+            // Generate QR code if not exists
+            if (patient.getQrCode() == null || patient.getQrCode().isEmpty()) {
+                String qrCode = qrCodeService.generateQRCode(patient.getId());
+                patient.setQrCode(qrCode);
+                patientRepository.save(patient);
+            }
+            
+            return convertToDTO(patient);
+        }
+        
+        // Try to find as Doctor
+        Optional<Doctor> doctorOptional = doctorRepository.findByEmail(request.getEmail());
+        if (doctorOptional.isPresent()) {
+            Doctor doctor = doctorOptional.get();
+            
+            if (!passwordEncoder.matches(request.getPassword(), doctor.getPassword())) {
+                throw new RuntimeException("Invalid email or password");
+            }
+            
+            return convertToDTO(doctor);
+        }
+        
+        // Try to find as regular User (ADMIN, STAFF)
         Optional<User> userOptional = userRepository.findByEmail(request.getEmail());
-        
-        if (userOptional.isEmpty()) {
-            throw new RuntimeException("Invalid email or password");
+        if (userOptional.isPresent()) {
+            User user = userOptional.get();
+            
+            if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+                throw new RuntimeException("Invalid email or password");
+            }
+            
+            return convertToDTO(user);
         }
         
-        User user = userOptional.get();
-        
-        if (!user.isActive()) {
-            throw new RuntimeException("Account is inactive");
-        }
-        
-        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new RuntimeException("Invalid email or password");
-        }
-        
-        // Generate HealthCard only for PATIENT users if not exists
-        if (user.getRole() == UserRole.PATIENT && (user.getHealthCardId() == null || user.getHealthCardId().isEmpty())) {
-            HealthCard healthCard = healthCardService.createHealthCard(user);
-            user.setHealthCardId(healthCard.getId());
-            userRepository.save(user);
-        }
-        
-        return convertToDTO(user);
+        throw new RuntimeException("Invalid email or password");
     }
     
     public UserDTO getUserById(String id) {
+        // Try Patient first
+        Optional<Patient> patient = patientRepository.findById(id);
+        if (patient.isPresent()) {
+            return convertToDTO(patient.get());
+        }
+        
+        // Try Doctor
+        Optional<Doctor> doctor = doctorRepository.findById(id);
+        if (doctor.isPresent()) {
+            return convertToDTO(doctor.get());
+        }
+        
+        // Try regular User
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         return convertToDTO(user);
     }
     
     public UserDTO getUserByEmail(String email) {
+        // Try Patient first
+        Optional<Patient> patient = patientRepository.findByEmail(email);
+        if (patient.isPresent()) {
+            return convertToDTO(patient.get());
+        }
+        
+        // Try Doctor
+        Optional<Doctor> doctor = doctorRepository.findByEmail(email);
+        if (doctor.isPresent()) {
+            return convertToDTO(doctor.get());
+        }
+        
+        // Try regular User
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         return convertToDTO(user);
@@ -107,91 +157,35 @@ public class UserService {
         dto.setName(user.getName());
         dto.setEmail(user.getEmail());
         dto.setRole(user.getRole());
-        dto.setDateOfBirth(user.getDateOfBirth());
         dto.setGender(user.getGender());
-        dto.setAddress(user.getAddress());
         dto.setContactNumber(user.getContactNumber());
         
-        // Add health card if user is a patient and has one
-        if (user.getRole() == UserRole.PATIENT && user.getHealthCardId() != null) {
-            try {
-                HealthCard healthCard = healthCardService.getHealthCardByUserId(user.getId());
-                HealthCardDTO healthCardDTO = healthCardService.convertToDTO(healthCard, user);
-                dto.setHealthCard(healthCardDTO);
-            } catch (Exception e) {
-                // Health card not found, leave it null
-            }
+        // Handle Patient-specific fields
+        if (user instanceof Patient) {
+            Patient patient = (Patient) user;
+            dto.setDateOfBirth(patient.getDateOfBirth());
+            dto.setAddress(patient.getAddress());
+            dto.setQrCode(patient.getQrCode());
         }
         
         return dto;
     }
     
     public User getUserEntityById(String id) {
+        // Try Patient first
+        Optional<Patient> patient = patientRepository.findById(id);
+        if (patient.isPresent()) {
+            return patient.get();
+        }
+        
+        // Try Doctor
+        Optional<Doctor> doctor = doctorRepository.findById(id);
+        if (doctor.isPresent()) {
+            return doctor.get();
+        }
+        
+        // Try regular User
         return userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-    }
-    
-    public UserDTO updateProfile(String userId, UpdateProfileRequest request) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        
-        // Update allowed fields
-        if (request.getName() != null && !request.getName().trim().isEmpty()) {
-            user.setName(request.getName().trim());
-        }
-        
-        user.setContactNumber(request.getContactNumber());
-        user.setDateOfBirth(request.getDateOfBirth());
-        user.setGender(request.getGender());
-        user.setAddress(request.getAddress());
-        user.setUpdatedAt(LocalDateTime.now());
-        
-        User updatedUser = userRepository.save(user);
-        return convertToDTO(updatedUser);
-    }
-    
-    public void changePassword(String userId, ChangePasswordRequest request) {
-        System.out.println("=== changePassword called for userId: " + userId);
-        System.out.println("=== Request object: " + request);
-        
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        
-        System.out.println("=== User found: " + user.getEmail());
-        
-        // Verify current password
-        System.out.println("=== Verifying current password...");
-        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
-            System.out.println("=== Current password verification FAILED");
-            throw new RuntimeException("Current password is incorrect");
-        }
-        System.out.println("=== Current password verified successfully");
-        
-        // Validate new password and confirmation match
-        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
-            System.out.println("=== New password and confirm password do not match");
-            throw new RuntimeException("New passwords do not match");
-        }
-        System.out.println("=== New password and confirm password match");
-        
-        // Validate new password length
-        if (request.getNewPassword().length() < 6) {
-            System.out.println("=== New password length validation FAILED");
-            throw new RuntimeException("New password must be at least 6 characters long");
-        }
-        System.out.println("=== New password length validation passed");
-        
-        // Check new password is different from current
-        if (passwordEncoder.matches(request.getNewPassword(), user.getPassword())) {
-            System.out.println("=== New password is same as current password");
-            throw new RuntimeException("New password must be different from current password");
-        }
-        System.out.println("=== New password is different from current");
-        
-        // Update password
-        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
-        user.setUpdatedAt(LocalDateTime.now());
-        userRepository.save(user);
-        System.out.println("=== Password updated successfully");
     }
 }
