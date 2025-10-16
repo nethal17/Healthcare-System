@@ -6,9 +6,13 @@ import com.example.health_care_system.dto.LoginRequest;
 import com.example.health_care_system.dto.RegisterRequest;
 import com.example.health_care_system.dto.UpdateProfileRequest;
 import com.example.health_care_system.dto.UserDTO;
+import com.example.health_care_system.model.Patient;
+import com.example.health_care_system.model.Doctor;
 import com.example.health_care_system.model.HealthCard;
 import com.example.health_care_system.model.User;
 import com.example.health_care_system.model.UserRole;
+import com.example.health_care_system.repository.PatientRepository;
+import com.example.health_care_system.repository.DoctorRepository;
 import com.example.health_care_system.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -22,6 +26,8 @@ import java.util.Optional;
 public class UserService {
     
     private final UserRepository userRepository;
+    private final PatientRepository patientRepository;
+    private final DoctorRepository doctorRepository;
     private final BCryptPasswordEncoder passwordEncoder;
     private final HealthCardService healthCardService;
     
@@ -32,34 +38,34 @@ public class UserService {
         }
         
         // Check if email already exists
-        if (userRepository.existsByEmail(request.getEmail())) {
+        if (patientRepository.existsByEmail(request.getEmail())) {
             throw new RuntimeException("Email already registered");
         }
         
-        // Create new user
-        User user = new User();
-        user.setName(request.getName());
-        user.setEmail(request.getEmail());
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setRole(UserRole.PATIENT);
-        user.setDateOfBirth(request.getDateOfBirth());
-        user.setGender(request.getGender());
-        user.setAddress(request.getAddress());
-        user.setContactNumber(request.getContactNumber());
-        user.setActive(true);
-        user.setCreatedAt(LocalDateTime.now());
-        user.setUpdatedAt(LocalDateTime.now());
+        // Create new patient
+        Patient patient = new Patient();
+        patient.setName(request.getName());
+        patient.setEmail(request.getEmail());
+        patient.setPassword(passwordEncoder.encode(request.getPassword()));
+        patient.setRole(UserRole.PATIENT);
+        patient.setDateOfBirth(request.getDateOfBirth());
+        patient.setGender(request.getGender());
+        patient.setAddress(request.getAddress());
+        patient.setContactNumber(request.getContactNumber());
+        patient.setActive(true);
+        patient.setCreatedAt(LocalDateTime.now());
+        patient.setUpdatedAt(LocalDateTime.now());
         
-        User savedUser = userRepository.save(user);
+        Patient savedPatient = patientRepository.save(patient);
         
         // Generate HealthCard only for PATIENT users
-        if (savedUser.getRole() == UserRole.PATIENT) {
-            HealthCard healthCard = healthCardService.createHealthCard(savedUser);
-            savedUser.setHealthCardId(healthCard.getId());
-            savedUser = userRepository.save(savedUser);
+        if (savedPatient.getRole() == UserRole.PATIENT) {
+            HealthCard healthCard = healthCardService.createHealthCard(savedPatient);
+            savedPatient.setHealthCardId(healthCard.getId());
+            savedPatient = userRepository.save(savedPatient);
         }
         
-        return convertToDTO(savedUser);
+        return convertToDTO(savedPatient);
     }
     
     public UserDTO login(LoginRequest request) {
@@ -90,12 +96,38 @@ public class UserService {
     }
     
     public UserDTO getUserById(String id) {
+        // Try Patient first
+        Optional<Patient> patient = patientRepository.findById(id);
+        if (patient.isPresent()) {
+            return convertToDTO(patient.get());
+        }
+        
+        // Try Doctor
+        Optional<Doctor> doctor = doctorRepository.findById(id);
+        if (doctor.isPresent()) {
+            return convertToDTO(doctor.get());
+        }
+        
+        // Try regular User
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         return convertToDTO(user);
     }
     
     public UserDTO getUserByEmail(String email) {
+        // Try Patient first
+        Optional<Patient> patient = patientRepository.findByEmail(email);
+        if (patient.isPresent()) {
+            return convertToDTO(patient.get());
+        }
+        
+        // Try Doctor
+        Optional<Doctor> doctor = doctorRepository.findByEmail(email);
+        if (doctor.isPresent()) {
+            return convertToDTO(doctor.get());
+        }
+        
+        // Try regular User
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         return convertToDTO(user);
@@ -107,9 +139,7 @@ public class UserService {
         dto.setName(user.getName());
         dto.setEmail(user.getEmail());
         dto.setRole(user.getRole());
-        dto.setDateOfBirth(user.getDateOfBirth());
         dto.setGender(user.getGender());
-        dto.setAddress(user.getAddress());
         dto.setContactNumber(user.getContactNumber());
         
         // Add health card if user is a patient and has one
@@ -127,6 +157,19 @@ public class UserService {
     }
     
     public User getUserEntityById(String id) {
+        // Try Patient first
+        Optional<Patient> patient = patientRepository.findById(id);
+        if (patient.isPresent()) {
+            return patient.get();
+        }
+        
+        // Try Doctor
+        Optional<Doctor> doctor = doctorRepository.findById(id);
+        if (doctor.isPresent()) {
+            return doctor.get();
+        }
+        
+        // Try regular User
         return userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
     }
@@ -141,9 +184,9 @@ public class UserService {
         }
         
         user.setContactNumber(request.getContactNumber());
-        user.setDateOfBirth(request.getDateOfBirth());
+        //user.setDateOfBirth(request.getDateOfBirth());
         user.setGender(request.getGender());
-        user.setAddress(request.getAddress());
+        //user.setAddress(request.getAddress());
         user.setUpdatedAt(LocalDateTime.now());
         
         User updatedUser = userRepository.save(user);
