@@ -133,69 +133,125 @@ public class HealthCardService {
      * Generate a visual health card image with all details
      */
     public byte[] generateHealthCardImage(HealthCard healthCard) throws IOException {
-        // Card dimensions
-        int cardWidth = 800;
-        int cardHeight = 500;
+        // Card dimensions (Credit card ratio - 1.586:1)
+        int cardWidth = 1000;
+        int cardHeight = 630;
         
-        // Create buffered image
+        // Create buffered image with higher quality
         BufferedImage cardImage = new BufferedImage(cardWidth, cardHeight, BufferedImage.TYPE_INT_RGB);
         Graphics2D g2d = cardImage.createGraphics();
         
-        // Enable anti-aliasing
+        // Enable anti-aliasing for better quality
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+        g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
         
-        // Draw gradient background
-        GradientPaint gradient = new GradientPaint(
-            0, 0, new Color(102, 126, 234), // #667eea
-            cardWidth, cardHeight, new Color(118, 75, 162) // #764ba2
-        );
-        g2d.setPaint(gradient);
-        g2d.fillRoundRect(0, 0, cardWidth, cardHeight, 30, 30);
-        
-        // Draw white rounded rectangle for content
+        // Draw simple white background
         g2d.setColor(Color.WHITE);
-        g2d.fillRoundRect(20, 20, cardWidth - 40, cardHeight - 40, 20, 20);
+        g2d.fillRect(0, 0, cardWidth, cardHeight);
         
-        // Draw header with gradient
-        g2d.setPaint(gradient);
-        g2d.fillRoundRect(30, 30, cardWidth - 60, 80, 15, 15);
+        // Draw subtle light blue border
+        g2d.setColor(new Color(191, 219, 254)); // Light blue 200
+        g2d.setStroke(new BasicStroke(8));
+        g2d.drawRoundRect(4, 4, cardWidth - 8, cardHeight - 8, 30, 30);
+        
+        // ==== HEADER SECTION ====
+        // Draw light blue header background
+        g2d.setColor(new Color(219, 234, 254)); // Light blue 100
+        g2d.fillRoundRect(30, 30, cardWidth - 60, 100, 20, 20);
         
         // Draw header text
-        g2d.setColor(Color.WHITE);
-        g2d.setFont(new Font("Arial", Font.BOLD, 36));
-        g2d.drawString("HEALTH CARD", 50, 80);
+        g2d.setColor(new Color(30, 64, 175)); // Blue 800
+        g2d.setFont(new Font("SansSerif", Font.BOLD, 40));
+        g2d.drawString("HEALTH CARD", 50, 90);
         
-        // Draw card info
-        g2d.setColor(new Color(51, 51, 51));
-        g2d.setFont(new Font("Arial", Font.BOLD, 24));
-        g2d.drawString("Patient Name:", 50, 160);
+        // Draw subtitle
+        g2d.setColor(new Color(96, 165, 250)); // Blue 400
+        g2d.setFont(new Font("SansSerif", Font.PLAIN, 16));
+        g2d.drawString("Official Medical Identification", 50, 115);
         
-        g2d.setFont(new Font("Arial", Font.PLAIN, 22));
-        g2d.drawString(healthCard.getPatientName(), 50, 195);
-        
-        g2d.setFont(new Font("Arial", Font.BOLD, 18));
-        g2d.drawString("Card ID: " + healthCard.getId().substring(0, Math.min(12, healthCard.getId().length())), 50, 240);
-        
-        g2d.drawString("Status: " + healthCard.getStatus(), 50, 275);
-        
-        // Format dates
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
-        g2d.drawString("Issue Date: " + healthCard.getCreateDate().format(formatter), 50, 310);
-        g2d.drawString("Expiry Date: " + healthCard.getExpireDate().format(formatter), 50, 345);
-        
-        // Check if expired
+        // Draw status badge
+        int badgeX = cardWidth - 160;
+        int badgeY = 50;
         if (isHealthCardExpired(healthCard)) {
-            g2d.setColor(Color.RED);
-            g2d.setFont(new Font("Arial", Font.BOLD, 20));
-            g2d.drawString("EXPIRED", 50, 380);
+            g2d.setColor(new Color(254, 202, 202)); // Red 200
         } else {
-            g2d.setColor(new Color(34, 197, 94));
-            g2d.setFont(new Font("Arial", Font.BOLD, 20));
-            g2d.drawString("VALID", 50, 380);
+            g2d.setColor(new Color(187, 247, 208)); // Green 200
+        }
+        g2d.fillRoundRect(badgeX, badgeY, 110, 45, 23, 23);
+        
+        if (isHealthCardExpired(healthCard)) {
+            g2d.setColor(new Color(185, 28, 28)); // Red 700
+        } else {
+            g2d.setColor(new Color(21, 128, 61)); // Green 700
+        }
+        g2d.setFont(new Font("SansSerif", Font.BOLD, 16));
+        String statusText = isHealthCardExpired(healthCard) ? "EXPIRED" : "ACTIVE";
+        FontMetrics statusFm = g2d.getFontMetrics();
+        int statusWidth = statusFm.stringWidth(statusText);
+        g2d.drawString(statusText, badgeX + (110 - statusWidth) / 2, badgeY + 28);
+        
+        // ==== MAIN CONTENT SECTION ====
+        int contentY = 160;
+        
+        // Patient Name Section
+        g2d.setColor(new Color(147, 197, 253)); // Blue 300
+        g2d.setFont(new Font("SansSerif", Font.BOLD, 14));
+        g2d.drawString("PATIENT NAME", 50, contentY + 20);
+        
+        g2d.setColor(new Color(17, 24, 39)); // Gray 900
+        g2d.setFont(new Font("SansSerif", Font.BOLD, 30));
+        g2d.drawString(healthCard.getPatientName().toUpperCase(), 50, contentY + 55);
+        
+        // Draw divider line
+        g2d.setColor(new Color(219, 234, 254)); // Light blue 100
+        g2d.setStroke(new BasicStroke(2));
+        g2d.drawLine(50, contentY + 75, cardWidth - 300, contentY + 75);
+        
+        // Card ID Section - Only show last 6 digits
+        g2d.setColor(new Color(147, 197, 253)); // Blue 300
+        g2d.setFont(new Font("SansSerif", Font.BOLD, 14));
+        g2d.drawString("CARD NUMBER", 50, contentY + 110);
+        
+        g2d.setColor(new Color(55, 65, 81)); // Gray 700
+        g2d.setFont(new Font("Monospaced", Font.PLAIN, 20));
+        String fullCardId = healthCard.getId();
+        // Show only last 12 digits
+        String lastTwelveDigits = fullCardId.substring(Math.max(0, fullCardId.length() - 12));
+        g2d.drawString(lastTwelveDigits.toUpperCase(), 50, contentY + 140);
+        
+        // Date Information Section
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd MMM yyyy");
+        
+        // Issue Date
+        g2d.setColor(new Color(147, 197, 253)); // Blue 300
+        g2d.setFont(new Font("SansSerif", Font.BOLD, 14));
+        g2d.drawString("ISSUED", 50, contentY + 185);
+        
+        g2d.setColor(new Color(55, 65, 81)); // Gray 700
+        g2d.setFont(new Font("SansSerif", Font.PLAIN, 18));
+        g2d.drawString(healthCard.getCreateDate().format(formatter), 50, contentY + 210);
+        
+        // Expiry Date
+        g2d.setColor(new Color(147, 197, 253)); // Blue 300
+        g2d.setFont(new Font("SansSerif", Font.BOLD, 14));
+        g2d.drawString("EXPIRES", 250, contentY + 185);
+        
+        g2d.setColor(new Color(55, 65, 81)); // Gray 700
+        g2d.setFont(new Font("SansSerif", Font.PLAIN, 18));
+        g2d.drawString(healthCard.getExpireDate().format(formatter), 250, contentY + 210);
+        
+        // Validity indicator
+        g2d.setFont(new Font("SansSerif", Font.BOLD, 14));
+        if (isHealthCardExpired(healthCard)) {
+            g2d.setColor(new Color(220, 38, 38)); // Red 600
+            g2d.drawString("⚠ Card Expired - Please Renew", 50, contentY + 255);
+        } else {
+            g2d.setColor(new Color(22, 163, 74)); // Green 600
+            g2d.drawString("✓ Valid for Medical Services", 50, contentY + 255);
         }
         
-        // Draw QR code on the right side
+        // ==== QR CODE SECTION ====
         if (healthCard.getQrCode() != null && !healthCard.getQrCode().isEmpty()) {
             try {
                 // Extract base64 data
@@ -207,27 +263,26 @@ public class HealthCardService {
                 byte[] imageBytes = Base64.getDecoder().decode(base64Data);
                 BufferedImage qrImage = ImageIO.read(new ByteArrayInputStream(imageBytes));
                 
-                // Draw QR code
-                int qrSize = 200;
-                int qrX = cardWidth - qrSize - 80;
-                int qrY = 140;
+                int qrSize = 240;
+                int qrX = cardWidth - qrSize - 60;
+                int qrY = contentY + 10;
                 
-                // Draw white background for QR code
-                g2d.setColor(Color.WHITE);
-                g2d.fillRect(qrX - 10, qrY - 10, qrSize + 20, qrSize + 20);
+                // Draw light background for QR code
+                g2d.setColor(new Color(239, 246, 255)); // Blue 50
+                g2d.fillRoundRect(qrX - 20, qrY - 20, qrSize + 40, qrSize + 75, 20, 20);
                 
-                // Draw border
-                g2d.setColor(new Color(102, 126, 234));
+                // Draw simple border
+                g2d.setColor(new Color(191, 219, 254)); // Light blue 200
                 g2d.setStroke(new BasicStroke(3));
-                g2d.drawRect(qrX - 10, qrY - 10, qrSize + 20, qrSize + 20);
+                g2d.drawRoundRect(qrX - 20, qrY - 20, qrSize + 40, qrSize + 75, 20, 20);
                 
-                // Draw QR code image
+                // Draw QR code
                 g2d.drawImage(qrImage, qrX, qrY, qrSize, qrSize, null);
                 
-                // Draw "Scan Me" text
-                g2d.setColor(new Color(51, 51, 51));
-                g2d.setFont(new Font("Arial", Font.BOLD, 16));
-                String scanText = "Scan for Details";
+                // Draw "SCAN HERE" label
+                g2d.setColor(new Color(59, 130, 246)); // Blue 500
+                g2d.setFont(new Font("SansSerif", Font.BOLD, 16));
+                String scanText = "SCAN HERE";
                 FontMetrics fm = g2d.getFontMetrics();
                 int textWidth = fm.stringWidth(scanText);
                 g2d.drawString(scanText, qrX + (qrSize - textWidth) / 2, qrY + qrSize + 30);
@@ -237,14 +292,23 @@ public class HealthCardService {
             }
         }
         
-        // Draw footer
-        g2d.setColor(new Color(156, 163, 175));
-        g2d.setFont(new Font("Arial", Font.ITALIC, 12));
-        g2d.drawString("Healthcare System - Keep this card safe and present it at every visit", 50, cardHeight - 40);
+        // ==== FOOTER SECTION ====
+        // Draw light footer background
+        g2d.setColor(new Color(239, 246, 255)); // Blue 50
+        g2d.fillRoundRect(30, cardHeight - 80, cardWidth - 60, 50, 20, 20);
+        
+        // Draw footer text
+        g2d.setColor(new Color(55, 65, 81)); // Gray 700
+        g2d.setFont(new Font("SansSerif", Font.BOLD, 14));
+        g2d.drawString("Healthcare System", 50, cardHeight - 47);
+        
+        g2d.setColor(new Color(107, 114, 128)); // Gray 500
+        g2d.setFont(new Font("SansSerif", Font.PLAIN, 12));
+        g2d.drawString("Keep this card safe and present at every visit  •  Emergency: +1-800-HEALTH", 230, cardHeight - 47);
         
         g2d.dispose();
         
-        // Convert to byte array
+        // Convert to byte array with high quality
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         ImageIO.write(cardImage, "PNG", baos);
         return baos.toByteArray();

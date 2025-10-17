@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient QR Scanner - Healthcare System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+</head>
+<body class="bg-gray-50">
+    <!-- Navbar -->
+    <div th:replace="fragments/navbar :: navbar(${user})"></div>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Page Header -->
+        <div class="mb-8">
+            <nav class="flex mb-4" aria-label="Breadcrumb">
+                <ol class="inline-flex items-center space-x-1 md:space-x-3">
+                    <li class="inline-flex items-center">
+                        <a th:href="@{/dashboard}" class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-blue-600">
+                            <i class="fas fa-home mr-2"></i>
+                            Dashboard
+                        </a>
+                    </li>
+                    <li>
+                        <div class="flex items-center">
+                            <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
+                            <span class="text-sm font-medium text-gray-500">Patient QR Scanner</span>
+                        </div>
+                    </li>
+                </ol>
+            </nav>
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-4xl font-bold text-gray-900 flex items-center">
+                        <i class="fas fa-qrcode mr-3 text-blue-500"></i> Patient QR Scanner
+                    </h2>
+                    <p class="text-gray-600 mt-2 text-lg">Scan patient health card to view their medical records</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Scanner Section -->
+            <div id="scannerSection" class="bg-white rounded-2xl shadow-lg overflow-hidden">
+                <div class="bg-blue-500 text-white px-6 py-4">
+                    <h5 class="text-xl font-bold">
+                        <i class="fas fa-camera mr-2"></i> Camera Scanner
+                    </h5>
+                </div>
+                <div class="p-6">
+                    <!-- Scanner Controls -->
+                    <div class="mb-4 space-y-3">
+                        <button id="startScanBtn" class="w-full bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold transition duration-200 shadow-md">
+                            <i class="fas fa-camera mr-2"></i> Start Camera
+                        </button>
+                        <button id="stopScanBtn" class="hidden w-full bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-lg font-semibold transition duration-200">
+                            <i class="fas fa-stop mr-2"></i> Stop Camera
+                        </button>
+                    </div>
+
+                    <!-- Scanner Display -->
+                    <div id="reader" class="w-full border-4 border-blue-200 rounded-lg overflow-hidden" style="display: none;"></div>
+                    
+                    <!-- Status Messages -->
+                    <div id="scanStatus" class="mt-4 hidden">
+                        <div class="flex items-center p-4 rounded-lg bg-blue-50">
+                            <i class="fas fa-spinner fa-spin text-blue-500 text-2xl mr-3"></i>
+                            <span class="text-gray-700">Scanning for patient health card...</span>
+                        </div>
+                    </div>
+
+                    <div id="scanError" class="mt-4 hidden">
+                        <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg">
+                            <div class="flex items-center">
+                                <i class="fas fa-exclamation-circle text-red-500 mr-2"></i>
+                                <span class="text-red-700 text-sm" id="errorMessage"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Medical Records Section -->
+            <div id="medicalRecordsSection" class="bg-white rounded-2xl shadow-lg overflow-hidden">
+                <div class="bg-green-500 text-white px-6 py-4">
+                    <h5 class="text-xl font-bold">
+                        <i class="fas fa-file-medical mr-2"></i> Patient Medical Records
+                    </h5>
+                </div>
+                <div class="p-6">
+                    <!-- Loading State -->
+                    <div id="loadingRecords" class="hidden">
+                        <div class="flex flex-col items-center justify-center py-12">
+                            <i class="fas fa-spinner fa-spin text-blue-500 text-4xl mb-4"></i>
+                            <p class="text-gray-600">Loading patient medical records...</p>
+                        </div>
+                    </div>
+
+                    <!-- Medical Records Display -->
+                    <div id="medicalRecordsContainer" class="hidden">
+                        <div class="bg-green-50 border-l-4 border-green-500 p-4 rounded-lg mb-4">
+                            <div class="flex items-center">
+                                <i class="fas fa-check-circle text-green-500 mr-2"></i>
+                                <span class="text-green-700 font-semibold">Patient Records Retrieved Successfully!</span>
+                            </div>
+                        </div>
+
+                        <!-- Patient Info -->
+                        <div class="bg-gray-50 p-4 rounded-lg mb-4">
+                            <h6 class="text-sm font-bold text-gray-700 mb-2">
+                                <i class="fas fa-user mr-1"></i> Patient Information
+                            </h6>
+                            <div class="space-y-1">
+                                <p class="text-sm"><span class="font-semibold">Name:</span> <span id="patientName">-</span></p>
+                                <p class="text-sm"><span class="font-semibold">ID:</span> <span id="patientId" class="font-mono">-</span></p>
+                            </div>
+                        </div>
+
+                        <!-- Records Count -->
+                        <div class="bg-blue-50 p-3 rounded-lg mb-4">
+                            <p class="text-sm font-semibold text-blue-900">
+                                <i class="fas fa-list-alt mr-1"></i> Total Records: <span id="recordsCount">0</span>
+                            </p>
+                        </div>
+
+                        <!-- Records List -->
+                        <div id="recordsList" class="space-y-3 max-h-96 overflow-y-auto">
+                            <!-- Records will be dynamically added here -->
+                        </div>
+
+                        <div class="mt-4 space-y-3">
+                            <button id="createRecordBtn" class="w-full bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg font-semibold transition duration-200 shadow-md">
+                                <i class="fas fa-plus-circle mr-2"></i> Create Medical Record
+                            </button>
+                            <button id="clearBtn" class="w-full bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded-lg font-semibold transition duration-200">
+                                <i class="fas fa-redo mr-2"></i> Scan Another Patient
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- No Records Message -->
+                    <div id="noRecords" class="hidden">
+                        <div class="flex flex-col items-center justify-center py-12">
+                            <i class="fas fa-folder-open text-gray-300 text-6xl mb-4"></i>
+                            <h3 class="text-xl font-semibold text-gray-700 mb-2">No Medical Records Found</h3>
+                            <p class="text-gray-500 text-center">
+                                This patient doesn't have any medical records yet.
+                            </p>
+                            <button id="clearNoRecordsBtn" class="mt-4 bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold transition duration-200">
+                                <i class="fas fa-redo mr-2"></i> Scan Another Patient
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Default State -->
+                    <div id="defaultState" class="flex flex-col items-center justify-center py-12">
+                        <i class="fas fa-qrcode text-gray-300 text-6xl mb-4"></i>
+                        <p class="text-gray-500 text-center">
+                            Scan a patient's health card QR code<br>
+                            to view their medical records
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Medical Record Modal -->
+    <div id="createRecordModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+        <div class="relative top-20 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-2xl bg-white">
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between pb-4 border-b">
+                <h3 class="text-2xl font-bold text-gray-900">
+                    <i class="fas fa-file-medical text-green-500 mr-2"></i>
+                    Create Medical Record
+                </h3>
+                <button id="closeModalBtn" class="text-gray-400 hover:text-gray-600 transition">
+                    <i class="fas fa-times text-2xl"></i>
+                </button>
+            </div>
+
+            <!-- Modal Body -->
+            <form id="medicalRecordForm" class="mt-6">
+                <!-- Patient Information (Read-only) -->
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                    <h4 class="text-sm font-bold text-blue-900 mb-3">
+                        <i class="fas fa-user-circle mr-1"></i> Patient Information
+                    </h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 mb-1">Patient ID</label>
+                            <input type="text" id="modalPatientId" readonly 
+                                   class="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-sm font-mono text-gray-700 cursor-not-allowed">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 mb-1">Patient Name</label>
+                            <input type="text" id="modalPatientName" readonly 
+                                   class="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-sm text-gray-700 cursor-not-allowed">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-xs font-semibold text-gray-600 mb-1">Date</label>
+                            <input type="text" id="modalRecordDate" readonly 
+                                   class="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-sm text-gray-700 cursor-not-allowed">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Diagnosis Field -->
+                <div class="mb-5">
+                    <label for="diagnosisInput" class="block text-sm font-semibold text-gray-700 mb-2">
+                        <i class="fas fa-stethoscope text-yellow-500 mr-1"></i> Diagnosis <span class="text-red-500">*</span>
+                    </label>
+                    <textarea id="diagnosisInput" required rows="3"
+                              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-transparent transition"
+                              placeholder="Enter patient diagnosis..."></textarea>
+                </div>
+
+                <!-- Prescription Field -->
+                <div class="mb-5">
+                    <label for="prescriptionInput" class="block text-sm font-semibold text-gray-700 mb-2">
+                        <i class="fas fa-prescription text-blue-500 mr-1"></i> Prescription <span class="text-red-500">*</span>
+                    </label>
+                    <textarea id="prescriptionInput" required rows="3"
+                              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-transparent transition"
+                              placeholder="Enter prescribed medications and dosage..."></textarea>
+                </div>
+
+                <!-- Notes Field -->
+                <div class="mb-6">
+                    <label for="notesInput" class="block text-sm font-semibold text-gray-700 mb-2">
+                        <i class="fas fa-notes-medical text-green-500 mr-1"></i> Additional Notes
+                    </label>
+                    <textarea id="notesInput" rows="3"
+                              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-400 focus:border-transparent transition"
+                              placeholder="Enter any additional notes or observations (optional)..."></textarea>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="flex items-center justify-end space-x-3 pt-4 border-t">
+                    <button type="button" id="cancelModalBtn" 
+                            class="px-6 py-2.5 bg-gray-500 hover:bg-gray-600 text-white rounded-lg font-semibold transition duration-200">
+                        <i class="fas fa-times mr-2"></i> Cancel
+                    </button>
+                    <button type="submit" 
+                            class="px-6 py-2.5 bg-green-500 hover:bg-green-600 text-white rounded-lg font-semibold transition duration-200 shadow-md">
+                        <i class="fas fa-save mr-2"></i> Save Record
+                    </button>
+                </div>
+            </form>
+
+            <!-- Success Message -->
+            <div id="modalSuccess" class="hidden mt-4 bg-green-50 border-l-4 border-green-500 p-4 rounded-lg">
+                <div class="flex items-center">
+                    <i class="fas fa-check-circle text-green-500 text-xl mr-3"></i>
+                    <span class="text-green-700 font-semibold">Medical record created successfully!</span>
+                </div>
+            </div>
+
+            <!-- Error Message -->
+            <div id="modalError" class="hidden mt-4 bg-red-50 border-l-4 border-red-500 p-4 rounded-lg">
+                <div class="flex items-center">
+                    <i class="fas fa-exclamation-circle text-red-500 text-xl mr-3"></i>
+                    <span class="text-red-700 text-sm" id="modalErrorMessage"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let html5QrCode = null;
+        let isScanning = false;
+        let currentPatientId = null;
+        let currentPatientName = null;
+
+        const startBtn = document.getElementById('startScanBtn');
+        const stopBtn = document.getElementById('stopScanBtn');
+        const readerDiv = document.getElementById('reader');
+        const scanStatus = document.getElementById('scanStatus');
+        const scanError = document.getElementById('scanError');
+        const loadingRecords = document.getElementById('loadingRecords');
+        const medicalRecordsContainer = document.getElementById('medicalRecordsContainer');
+        const noRecords = document.getElementById('noRecords');
+        const defaultState = document.getElementById('defaultState');
+        const clearBtn = document.getElementById('clearBtn');
+        const clearNoRecordsBtn = document.getElementById('clearNoRecordsBtn');
+        const createRecordBtn = document.getElementById('createRecordBtn');
+        const createRecordModal = document.getElementById('createRecordModal');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        const cancelModalBtn = document.getElementById('cancelModalBtn');
+        const medicalRecordForm = document.getElementById('medicalRecordForm');
+        const scannerSection = document.getElementById('scannerSection');
+        const medicalRecordsSection = document.getElementById('medicalRecordsSection');
+
+        // Start scanning
+        startBtn.addEventListener('click', function() {
+            startScanning();
+        });
+
+        // Stop scanning
+        stopBtn.addEventListener('click', function() {
+            stopScanning();
+        });
+
+        // Clear and scan again
+        clearBtn.addEventListener('click', function() {
+            resetView();
+            startScanning();
+        });
+
+        clearNoRecordsBtn.addEventListener('click', function() {
+            resetView();
+            startScanning();
+        });
+
+        // Open modal for creating medical record
+        createRecordBtn.addEventListener('click', function() {
+            openCreateRecordModal();
+        });
+
+        // Close modal
+        closeModalBtn.addEventListener('click', function() {
+            closeCreateRecordModal();
+        });
+
+        cancelModalBtn.addEventListener('click', function() {
+            closeCreateRecordModal();
+        });
+
+        // Submit medical record form
+        medicalRecordForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            submitMedicalRecord();
+        });
+
+        // Close modal when clicking outside
+        createRecordModal.addEventListener('click', function(e) {
+            if (e.target === createRecordModal) {
+                closeCreateRecordModal();
+            }
+        });
+
+        function startScanning() {
+            if (isScanning) return;
+
+            html5QrCode = new Html5Qrcode("reader");
+            readerDiv.style.display = 'block';
+            scanStatus.classList.remove('hidden');
+            scanError.classList.add('hidden');
+            startBtn.classList.add('hidden');
+            stopBtn.classList.remove('hidden');
+
+            html5QrCode.start(
+                { facingMode: "environment" },
+                {
+                    fps: 10,
+                    qrbox: { width: 250, height: 250 }
+                },
+                onScanSuccess,
+                onScanError
+            ).then(() => {
+                isScanning = true;
+            }).catch(err => {
+                showError("Failed to start camera: " + err);
+                stopScanning();
+            });
+        }
+
+        function stopScanning() {
+            if (!isScanning || !html5QrCode) return;
+
+            html5QrCode.stop().then(() => {
+                isScanning = false;
+                readerDiv.style.display = 'none';
+                scanStatus.classList.add('hidden');
+                startBtn.classList.remove('hidden');
+                stopBtn.classList.add('hidden');
+            }).catch(err => {
+                console.error("Failed to stop scanning:", err);
+            });
+        }
+
+        function onScanSuccess(decodedText, decodedResult) {
+            console.log("QR Code scanned:", decodedText);
+            stopScanning();
+            fetchMedicalRecords(decodedText);
+        }
+
+        function onScanError(errorMessage) {
+            // Ignore scanning errors (they happen frequently while searching)
+        }
+
+        function fetchMedicalRecords(patientId) {
+            // Show loading state
+            defaultState.classList.add('hidden');
+            medicalRecordsContainer.classList.add('hidden');
+            noRecords.classList.add('hidden');
+            loadingRecords.classList.remove('hidden');
+            scanError.classList.add('hidden');
+
+            fetch('/medical-records/doctor/scan-patient-qr', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ patientId: patientId })
+            })
+            .then(response => response.json())
+            .then(data => {
+                loadingRecords.classList.add('hidden');
+                
+                if (data.success) {
+                    if (data.records && data.records.length > 0) {
+                        displayMedicalRecords(data.patientName, data.patientId, data.records);
+                    } else {
+                        showNoRecords();
+                    }
+                } else {
+                    showError(data.message || 'Failed to fetch medical records');
+                    defaultState.classList.remove('hidden');
+                }
+            })
+            .catch(error => {
+                loadingRecords.classList.add('hidden');
+                showError('Network error: ' + error.message);
+                defaultState.classList.remove('hidden');
+            });
+        }
+
+        function displayMedicalRecords(patientName, patientId, records) {
+            currentPatientId = patientId;
+            currentPatientName = patientName;
+            
+            // Hide scanner section and make medical records section full width
+            scannerSection.classList.add('hidden');
+            medicalRecordsSection.classList.remove('lg:col-span-1');
+            medicalRecordsSection.classList.add('lg:col-span-2');
+            
+            document.getElementById('patientName').textContent = patientName;
+            document.getElementById('patientId').textContent = patientId.substring(0, 12) + '...';
+            document.getElementById('recordsCount').textContent = records.length;
+
+            const recordsList = document.getElementById('recordsList');
+            recordsList.innerHTML = '';
+
+            records.forEach((record, index) => {
+                const recordDiv = document.createElement('div');
+                recordDiv.className = 'bg-gray-50 border border-gray-200 rounded-lg p-4';
+                recordDiv.innerHTML = `
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-sm font-bold text-gray-900">Record #${index + 1}</span>
+                        <span class="text-xs text-gray-500">
+                            <i class="fas fa-calendar mr-1"></i>${formatDate(record.recordDate)}
+                        </span>
+                    </div>
+                    <div class="space-y-2">
+                        <div class="bg-yellow-50 border-l-2 border-yellow-400 p-2 rounded">
+                            <p class="text-xs font-semibold text-gray-700 mb-1">
+                                <i class="fas fa-stethoscope mr-1"></i>Diagnosis
+                            </p>
+                            <p class="text-sm text-gray-800">${record.diagnosis || 'N/A'}</p>
+                        </div>
+                        <div class="bg-blue-50 border-l-2 border-blue-400 p-2 rounded">
+                            <p class="text-xs font-semibold text-gray-700 mb-1">
+                                <i class="fas fa-prescription mr-1"></i>Prescription
+                            </p>
+                            <p class="text-sm text-gray-800">${record.prescription || 'N/A'}</p>
+                        </div>
+                        ${record.notes ? `
+                        <div class="bg-green-50 border-l-2 border-green-400 p-2 rounded">
+                            <p class="text-xs font-semibold text-gray-700 mb-1">
+                                <i class="fas fa-notes-medical mr-1"></i>Notes
+                            </p>
+                            <p class="text-sm text-gray-800">${record.notes}</p>
+                        </div>
+                        ` : ''}
+                    </div>
+                `;
+                recordsList.appendChild(recordDiv);
+            });
+
+            medicalRecordsContainer.classList.remove('hidden');
+        }
+
+        function showNoRecords() {
+            // Hide scanner section and make medical records section full width
+            scannerSection.classList.add('hidden');
+            medicalRecordsSection.classList.remove('lg:col-span-1');
+            medicalRecordsSection.classList.add('lg:col-span-2');
+            
+            noRecords.classList.remove('hidden');
+        }
+
+        function showError(message) {
+            document.getElementById('errorMessage').textContent = message;
+            scanError.classList.remove('hidden');
+        }
+
+        function resetView() {
+            medicalRecordsContainer.classList.add('hidden');
+            noRecords.classList.add('hidden');
+            loadingRecords.classList.add('hidden');
+            scanError.classList.add('hidden');
+            defaultState.classList.remove('hidden');
+            
+            // Show scanner section again and restore grid layout
+            scannerSection.classList.remove('hidden');
+            medicalRecordsSection.classList.remove('lg:col-span-2');
+            medicalRecordsSection.classList.add('lg:col-span-1');
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return 'N/A';
+            const date = new Date(dateString);
+            const options = { year: 'numeric', month: 'short', day: 'numeric' };
+            return date.toLocaleDateString('en-US', options);
+        }
+
+        function openCreateRecordModal() {
+            if (!currentPatientId || !currentPatientName) {
+                showError('No patient selected. Please scan a patient QR code first.');
+                return;
+            }
+
+            // Populate modal with patient info
+            document.getElementById('modalPatientId').value = currentPatientId;
+            document.getElementById('modalPatientName').value = currentPatientName;
+            
+            // Set current date
+            const today = new Date();
+            const dateString = today.toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+            document.getElementById('modalRecordDate').value = dateString;
+
+            // Clear form fields
+            document.getElementById('diagnosisInput').value = '';
+            document.getElementById('prescriptionInput').value = '';
+            document.getElementById('notesInput').value = '';
+
+            // Hide messages
+            document.getElementById('modalSuccess').classList.add('hidden');
+            document.getElementById('modalError').classList.add('hidden');
+
+            // Show modal
+            createRecordModal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeCreateRecordModal() {
+            createRecordModal.classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+
+        function submitMedicalRecord() {
+            const diagnosis = document.getElementById('diagnosisInput').value.trim();
+            const prescription = document.getElementById('prescriptionInput').value.trim();
+            const notes = document.getElementById('notesInput').value.trim();
+
+            if (!diagnosis || !prescription) {
+                showModalError('Diagnosis and Prescription are required fields.');
+                return;
+            }
+
+            // Prepare data
+            const recordData = {
+                patientId: currentPatientId,
+                diagnosis: diagnosis,
+                prescription: prescription,
+                notes: notes || null
+            };
+
+            // Disable submit button
+            const submitBtn = medicalRecordForm.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Saving...';
+
+            // Send to backend
+            fetch('/medical-records/create', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(recordData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('modalSuccess').classList.remove('hidden');
+                    document.getElementById('modalError').classList.add('hidden');
+                    
+                    // Reset form
+                    medicalRecordForm.reset();
+                    
+                    // Close modal after 2 seconds and refresh records
+                    setTimeout(() => {
+                        closeCreateRecordModal();
+                        // Refresh the medical records display
+                        fetchMedicalRecords('HEALTHCARE_USER:' + currentPatientId);
+                    }, 2000);
+                } else {
+                    showModalError(data.message || 'Failed to create medical record');
+                }
+            })
+            .catch(error => {
+                showModalError('Network error: ' + error.message);
+            })
+            .finally(() => {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-save mr-2"></i> Save Record';
+            });
+        }
+
+        function showModalError(message) {
+            document.getElementById('modalErrorMessage').textContent = message;
+            document.getElementById('modalError').classList.remove('hidden');
+            document.getElementById('modalSuccess').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>

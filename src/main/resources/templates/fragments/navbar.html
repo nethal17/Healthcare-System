@@ -3,62 +3,49 @@
 <head>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#667eea',
-                        secondary: '#764ba2',
-                    }
-                }
-            }
-        }
-    </script>
 </head>
 <body>
     <nav class="bg-gray-100 shadow-lg" th:fragment="navbar(user)">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-16">
                 <!-- Logo -->
-                <div class="flex items-center">
-                    <a href="#" class="flex items-center text-white text-xl font-bold">
+                <div class="flex items-center text-gray-900 text-xl font-bold">
+                    <a href="#" class="flex items-center text-blue-500 text-xl font-bold">
                         <i class="fas fa-hospital mr-2"></i>
-                        Healthcare System
                     </a>
+                    Healthcare System
                 </div>
 
                 <!-- Menu Items -->
                 <div class="hidden md:flex items-center space-x-4">
-                    <a th:href="@{/dashboard}" class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">
+                    <a th:href="@{/dashboard}" class="text-gray-900 hover:text-blue-600 px-3 py-2 rounded-md text-md font-medium cursor-pointer">
                         <i class="fas fa-home mr-1"></i> Dashboard
                     </a>
-                    <a th:if="${user != null && user.role.name() == 'PATIENT'}" th:href="@{/appointments/my-appointments}" class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">
+                    <a th:if="${user != null && user.role.name() == 'PATIENT'}" href="/appointments/my-appointments" class="text-gray-900 hover:text-blue-600 px-3 py-2 rounded-md text-md font-medium cursor-pointer">
                         <i class="fas fa-calendar-check mr-1"></i> Appointments
                     </a>
-                    <a th:if="${user != null && user.role.name() == 'DOCTOR'}" href="#" class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">
+                    <a th:if="${user != null && user.role.name() == 'DOCTOR'}" href="#" class="text-gray-900 hover:text-blue-600 px-3 py-2 rounded-md text-md font-medium cursor-pointer">
                         <i class="fas fa-user-injured mr-1"></i> Patients
                     </a>
-                    <a th:if="${user != null && user.role.name() == 'ADMIN'}" href="#" class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">
+                    <a th:if="${user != null && user.role.name() == 'ADMIN'}" href="#" class="text-gray-900 hover:text-blue-600 px-3 py-2 rounded-md text-md font-medium cursor-pointer">
                         <i class="fas fa-users-cog mr-1"></i> Manage Users
+                    </a>
+                    <a th:if="${user != null && user.role.name() == 'STAFF'}" th:href="@{/staff/scanner}" class="text-gray-900 hover:text-blue-600 px-3 py-2 rounded-md text-md font-medium cursor-pointer">
+                        <i class="fas fa-qrcode mr-1"></i> Scan QR Code
                     </a>
                 </div>
 
                 <!-- User Info -->
                 <div th:if="${user != null}" class="flex items-center space-x-4">
                     <div class="flex items-center space-x-3">
-                        <!-- Avatar -->
-                        <div class="w-10 h-10 rounded-full bg-gradient-to-r from-primary to-secondary flex items-center justify-center text-white font-bold">
+                        <!-- Avatar - Clickable -->
+                        <a th:href="@{/profile}" class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold hover:bg-blue-600 transition duration-200 cursor-pointer" title="View Profile">
                             <span th:text="${#strings.substring(user.name, 0, 1)}">U</span>
-                        </div>
+                        </a>
                         <!-- User Details -->
                         <div class="hidden lg:block">
-                            <div class="text-sm font-medium text-white" th:text="${user.name}">User Name</div>
-                            <div class="text-xs text-gray-400">
-                                <span th:if="${user.role.name() == 'PATIENT'}" class="inline-block bg-green-500 text-white px-2 py-1 rounded-full text-xs">Patient</span>
-                                <span th:if="${user.role.name() == 'DOCTOR'}" class="inline-block bg-blue-500 text-white px-2 py-1 rounded-full text-xs">Doctor</span>
-                                <span th:if="${user.role.name() == 'ADMIN'}" class="inline-block bg-red-500 text-white px-2 py-1 rounded-full text-xs">Admin</span>
-                            </div>
+                            <div class="text-sm font-medium text-gray-900" th:text="${user.name}">User Name</div>
+                           
                         </div>
                     </div>
                     <!-- Logout Button -->

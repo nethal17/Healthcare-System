@@ -9,74 +9,42 @@
 </head>
 <body class="bg-gray-50">
     <!-- Navbar -->
-    <nav class="bg-gray-800 shadow-lg">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-16">
-                <!-- Logo -->
-                <div class="flex items-center">
-                    <a href="#" class="flex items-center text-white text-xl font-bold">
-                        <i class="fas fa-hospital mr-2"></i>
-                        Healthcare System
-                    </a>
-                </div>
-
-                <!-- Menu Items -->
-                <div class="hidden md:flex items-center space-x-4">
-                    <a th:href="@{/dashboard}" class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">
-                        <i class="fas fa-home mr-1"></i> Dashboard
-                    </a>
-                    <a th:if="${user != null && user.role.name() == 'PATIENT'}" href="/appointments/my-appointments" class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">
-                        <i class="fas fa-calendar-check mr-1"></i> Appointments
-                    </a>
-                    <a th:if="${user != null && user.role.name() == 'DOCTOR'}" href="#" class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">
-                        <i class="fas fa-user-injured mr-1"></i> Patients
-                    </a>
-                    <a th:if="${user != null && user.role.name() == 'ADMIN'}" href="#" class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">
-                        <i class="fas fa-users-cog mr-1"></i> Manage Users
-                    </a>
-                    <a th:if="${user != null && user.role.name() == 'STAFF'}" th:href="@{/staff/scanner}" class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">
-                        <i class="fas fa-qrcode mr-1"></i> Scan QR Code
-                    </a>
-                    <a th:href="@{/profile}" class="text-white bg-gray-700 px-3 py-2 rounded-md text-sm font-medium">
-                        <i class="fas fa-user mr-1"></i> Profile
-                    </a>
-                </div>
-
-                <!-- User Info -->
-                <div th:if="${user != null}" class="flex items-center space-x-4">
-                    <div class="flex items-center space-x-3">
-                        <!-- Avatar - Clickable -->
-                        <a th:href="@{/profile}" class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold hover:bg-blue-600 transition duration-200 cursor-pointer" title="View Profile">
-                            <span th:text="${#strings.substring(user.name, 0, 1)}">U</span>
-                        </a>
-                        <!-- User Details -->
-                        <div class="hidden lg:block">
-                            <div class="text-sm font-medium text-white" th:text="${user.name}">User Name</div>
-                            <div class="text-xs text-gray-400">
-                                <span th:if="${user.role.name() == 'PATIENT'}" class="inline-block bg-green-500 text-white px-2 py-1 rounded-full text-xs">Patient</span>
-                                <span th:if="${user.role.name() == 'DOCTOR'}" class="inline-block bg-blue-500 text-white px-2 py-1 rounded-full text-xs">Doctor</span>
-                                <span th:if="${user.role.name() == 'ADMIN'}" class="inline-block bg-red-500 text-white px-2 py-1 rounded-full text-xs">Admin</span>
-                                <span th:if="${user.role.name() == 'STAFF'}" class="inline-block bg-purple-500 text-white px-2 py-1 rounded-full text-xs">Staff</span>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- Logout Button -->
-                    <a th:href="@{/logout}" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition duration-200">
-                        <i class="fas fa-sign-out-alt mr-1"></i> Logout
-                    </a>
-                </div>
-            </div>
-        </div>
-    </nav>
+    <div th:replace="fragments/navbar :: navbar(${user})"></div>
 
     <!-- Main Content -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <!-- Page Header -->
+        <!-- Page Header with Breadcrumb -->
         <div class="mb-8">
-            <h2 class="text-3xl font-bold text-gray-800">
-                <i class="fas fa-user-circle mr-2"></i> My Profile
-            </h2>
-            <p class="text-gray-600 mt-2">View and update your personal information</p>
+            <nav class="flex mb-4" aria-label="Breadcrumb">
+                <ol class="inline-flex items-center space-x-1 md:space-x-3">
+                    <li class="inline-flex items-center">
+                        <a th:href="@{/dashboard}" class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-blue-600">
+                            <i class="fas fa-home mr-2"></i>
+                            Dashboard
+                        </a>
+                    </li>
+                    <li>
+                        <div class="flex items-center">
+                            <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
+                            <span class="text-sm font-medium text-gray-500">Profile</span>
+                        </div>
+                    </li>
+                </ol>
+            </nav>
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-4xl font-bold text-gray-900 flex items-center">
+                        <i class="fas fa-user-circle mr-3 text-blue-500"></i> My Profile
+                    </h2>
+                    <p class="text-gray-600 mt-2 text-lg">View and manage your personal information</p>
+                </div>
+                <div class="hidden md:block">
+                    <div class="flex items-center space-x-2 bg-blue-50 px-4 py-2 rounded-lg border border-blue-200">
+                        <i class="fas fa-shield-alt text-blue-600"></i>
+                        <span class="text-sm font-medium text-blue-800">Your data is secure</span>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Success/Error Messages -->
@@ -94,166 +62,342 @@
             </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <!-- Left Column - Profile Info Display -->
-            <div class="lg:col-span-1">
-                <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
-                    <div class="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-8 text-center">
-                        <div class="w-24 h-24 rounded-full bg-white text-blue-500 flex items-center justify-center text-4xl font-bold mx-auto mb-4 shadow-lg">
-                            <span th:text="${#strings.substring(user.name, 0, 1)}">U</span>
-                        </div>
-                        <h3 class="text-xl font-bold" th:text="${user.name}">User Name</h3>
-                        <p class="text-blue-100 text-sm mt-1" th:text="${user.email}">email@example.com</p>
-                        <div class="mt-3">
-                            <span th:if="${user.role.name() == 'PATIENT'}" class="inline-block bg-white text-blue-600 px-4 py-1 rounded-full text-sm font-semibold">
-                                <i class="fas fa-user-injured mr-1"></i>Patient
-                            </span>
-                            <span th:if="${user.role.name() == 'DOCTOR'}" class="inline-block bg-white text-blue-600 px-4 py-1 rounded-full text-sm font-semibold">
-                                <i class="fas fa-user-md mr-1"></i>Doctor
-                            </span>
-                            <span th:if="${user.role.name() == 'ADMIN'}" class="inline-block bg-white text-blue-600 px-4 py-1 rounded-full text-sm font-semibold">
-                                <i class="fas fa-user-shield mr-1"></i>Admin
-                            </span>
-                            <span th:if="${user.role.name() == 'STAFF'}" class="inline-block bg-white text-blue-600 px-4 py-1 rounded-full text-sm font-semibold">
-                                <i class="fas fa-user-tie mr-1"></i>Staff
-                            </span>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Profile Info Display -->
+            <div class="space-y-6">
+                <div class="bg-white rounded-2xl shadow-xl overflow-hidden transform transition-all duration-300 hover:shadow-2xl">
+                    <div class="bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 text-white px-6 py-10 text-center relative overflow-hidden">
+                        <!-- Decorative circles -->
+                        <div class="absolute top-0 right-0 w-32 h-32 bg-white opacity-10 rounded-full -mr-16 -mt-16"></div>
+                        <div class="absolute bottom-0 left-0 w-24 h-24 bg-white opacity-10 rounded-full -ml-12 -mb-12"></div>
+                        
+                        <div class="relative z-10">
+                            <div class="w-28 h-28 rounded-full bg-white text-blue-600 flex items-center justify-center text-5xl font-bold mx-auto mb-4 shadow-2xl border-4 border-white/30 transform transition-transform duration-300 hover:scale-110">
+                                <span th:text="${#strings.substring(user.name, 0, 1)}">U</span>
+                            </div>
+                            <h3 class="text-2xl font-bold mb-1" th:text="${user.name}">User Name</h3>
+                            <p class="text-blue-100 text-sm mb-3" th:text="${user.email}">email@example.com</p>
+                            <div class="mt-4">
+                                <span th:if="${user.role.name() == 'PATIENT'}" class="inline-flex items-center bg-white text-blue-600 px-5 py-2 rounded-full text-sm font-bold shadow-lg">
+                                    <i class="fas fa-user-injured mr-2"></i>Patient
+                                </span>
+                                <span th:if="${user.role.name() == 'DOCTOR'}" class="inline-flex items-center bg-white text-blue-600 px-5 py-2 rounded-full text-sm font-bold shadow-lg">
+                                    <i class="fas fa-user-md mr-2"></i>Doctor
+                                </span>
+                                <span th:if="${user.role.name() == 'ADMIN'}" class="inline-flex items-center bg-white text-blue-600 px-5 py-2 rounded-full text-sm font-bold shadow-lg">
+                                    <i class="fas fa-user-shield mr-2"></i>Admin
+                                </span>
+                                <span th:if="${user.role.name() == 'STAFF'}" class="inline-flex items-center bg-white text-blue-600 px-5 py-2 rounded-full text-sm font-bold shadow-lg">
+                                    <i class="fas fa-user-tie mr-2"></i>Staff
+                                </span>
+                            </div>
                         </div>
                     </div>
+                    
                     <div class="p-6 space-y-4">
-                        <div class="flex items-center text-gray-700">
-                            <i class="fas fa-envelope text-blue-500 w-8"></i>
-                            <div>
-                                <p class="text-xs text-gray-500 font-semibold">Email</p>
-                                <p class="text-sm" th:text="${user.email}"></p>
+                        <div class="flex items-center text-gray-700 p-3 rounded-lg hover:bg-blue-50 transition duration-200">
+                            <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center mr-4">
+                                <i class="fas fa-envelope text-blue-600 text-lg"></i>
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-xs text-gray-500 font-semibold uppercase tracking-wide">Email</p>
+                                <p class="text-sm font-medium text-gray-800" th:text="${user.email}"></p>
                             </div>
                         </div>
-                        <div th:if="${user.contactNumber}" class="flex items-center text-gray-700">
-                            <i class="fas fa-phone text-blue-500 w-8"></i>
-                            <div>
-                                <p class="text-xs text-gray-500 font-semibold">Contact</p>
-                                <p class="text-sm" th:text="${user.contactNumber}"></p>
+                        
+                        <div th:if="${user.contactNumber}" class="flex items-center text-gray-700 p-3 rounded-lg hover:bg-blue-50 transition duration-200">
+                            <div class="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mr-4">
+                                <i class="fas fa-phone text-green-600 text-lg"></i>
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-xs text-gray-500 font-semibold uppercase tracking-wide">Contact</p>
+                                <p class="text-sm font-medium text-gray-800" th:text="${user.contactNumber}"></p>
                             </div>
                         </div>
-                        <div th:if="${user.dateOfBirth}" class="flex items-center text-gray-700">
-                            <i class="fas fa-calendar text-blue-500 w-8"></i>
-                            <div>
-                                <p class="text-xs text-gray-500 font-semibold">Date of Birth</p>
-                                <p class="text-sm" th:text="${#temporals.format(user.dateOfBirth, 'dd-MM-yyyy')}"></p>
+                        
+                        <div th:if="${user.dateOfBirth}" class="flex items-center text-gray-700 p-3 rounded-lg hover:bg-blue-50 transition duration-200">
+                            <div class="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center mr-4">
+                                <i class="fas fa-calendar text-purple-600 text-lg"></i>
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-xs text-gray-500 font-semibold uppercase tracking-wide">Date of Birth</p>
+                                <p class="text-sm font-medium text-gray-800" th:text="${#temporals.format(user.dateOfBirth, 'dd-MM-yyyy')}"></p>
                             </div>
                         </div>
-                        <div th:if="${user.gender}" class="flex items-center text-gray-700">
-                            <i class="fas fa-venus-mars text-blue-500 w-8"></i>
-                            <div>
-                                <p class="text-xs text-gray-500 font-semibold">Gender</p>
-                                <p class="text-sm" th:text="${user.gender}"></p>
+                        
+                        <div th:if="${user.gender}" class="flex items-center text-gray-700 p-3 rounded-lg hover:bg-blue-50 transition duration-200">
+                            <div class="w-12 h-12 rounded-full bg-pink-100 flex items-center justify-center mr-4">
+                                <i class="fas fa-venus-mars text-pink-600 text-lg"></i>
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-xs text-gray-500 font-semibold uppercase tracking-wide">Gender</p>
+                                <p class="text-sm font-medium text-gray-800" th:text="${user.gender}"></p>
                             </div>
                         </div>
-                        <div th:if="${user.address}" class="flex items-center text-gray-700">
-                            <i class="fas fa-map-marker-alt text-blue-500 w-8"></i>
-                            <div>
-                                <p class="text-xs text-gray-500 font-semibold">Address</p>
-                                <p class="text-sm" th:text="${user.address}"></p>
+                        
+                        <div th:if="${user.address}" class="flex items-start text-gray-700 p-3 rounded-lg hover:bg-blue-50 transition duration-200">
+                            <div class="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center mr-4 flex-shrink-0">
+                                <i class="fas fa-map-marker-alt text-orange-600 text-lg"></i>
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-xs text-gray-500 font-semibold uppercase tracking-wide">Address</p>
+                                <p class="text-sm font-medium text-gray-800" th:text="${user.address}"></p>
                             </div>
                         </div>
                     </div>
-                </div>
-
-            </div>
-
-            <!-- Right Column - Edit Profile Form -->
-            <div class="lg:col-span-2">
-                <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
-                    <div class="bg-blue-500 text-white px-6 py-4">
-                        <h3 class="text-xl font-bold">
-                            <i class="fas fa-edit mr-2"></i>Edit Profile Information
-                        </h3>
-                    </div>
-                    <form th:action="@{/profile/update}" th:object="${updateRequest}" method="post" class="p-6">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <!-- Name -->
-                            <div class="md:col-span-2">
-                                <label for="name" class="block text-sm font-semibold text-gray-700 mb-2">
-                                    <i class="fas fa-user mr-1"></i>Full Name
-                                </label>
-                                <input type="text" id="name" th:field="*{name}" 
-                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
-                                       placeholder="Enter your full name" required>
-                                <p th:if="${#fields.hasErrors('name')}" th:errors="*{name}" class="text-red-500 text-sm mt-1"></p>
-                            </div>
-
-                            <!-- Email -->
-                            <div>
-                                <label for="email" class="block text-sm font-semibold text-gray-700 mb-2">
-                                    <i class="fas fa-envelope mr-1"></i>Email Address
-                                </label>
-                                <input type="email" id="email" th:field="*{email}" 
-                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
-                                       placeholder="Enter your email" required>
-                                <p th:if="${#fields.hasErrors('email')}" th:errors="*{email}" class="text-red-500 text-sm mt-1"></p>
-                            </div>
-
-                            <!-- Contact Number -->
-                            <div>
-                                <label for="contactNumber" class="block text-sm font-semibold text-gray-700 mb-2">
-                                    <i class="fas fa-phone mr-1"></i>Contact Number
-                                </label>
-                                <input type="text" id="contactNumber" th:field="*{contactNumber}" 
-                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
-                                       placeholder="+94 77 123 4567" required>
-                                <p th:if="${#fields.hasErrors('contactNumber')}" th:errors="*{contactNumber}" class="text-red-500 text-sm mt-1"></p>
-                            </div>
-
-                            <!-- Date of Birth -->
-                            <div>
-                                <label for="dateOfBirth" class="block text-sm font-semibold text-gray-700 mb-2">
-                                    <i class="fas fa-calendar mr-1"></i>Date of Birth
-                                </label>
-                                <input type="date" id="dateOfBirth" th:field="*{dateOfBirth}" 
-                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
-                                       required>
-                                <p th:if="${#fields.hasErrors('dateOfBirth')}" th:errors="*{dateOfBirth}" class="text-red-500 text-sm mt-1"></p>
-                            </div>
-
-                            <!-- Gender -->
-                            <div>
-                                <label for="gender" class="block text-sm font-semibold text-gray-700 mb-2">
-                                    <i class="fas fa-venus-mars mr-1"></i>Gender
-                                </label>
-                                <select id="gender" th:field="*{gender}" 
-                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
-                                        required>
-                                    <option value="">Select Gender</option>
-                                    <option value="Male">Male</option>
-                                    <option value="Female">Female</option>
-                                    <option value="Other">Other</option>
-                                </select>
-                                <p th:if="${#fields.hasErrors('gender')}" th:errors="*{gender}" class="text-red-500 text-sm mt-1"></p>
-                            </div>
-
-                            <!-- Address -->
-                            <div class="md:col-span-2">
-                                <label for="address" class="block text-sm font-semibold text-gray-700 mb-2">
-                                    <i class="fas fa-map-marker-alt mr-1"></i>Address
-                                </label>
-                                <textarea id="address" th:field="*{address}" rows="3"
-                                          class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
-                                          placeholder="Enter your complete address" required></textarea>
-                                <p th:if="${#fields.hasErrors('address')}" th:errors="*{address}" class="text-red-500 text-sm mt-1"></p>
-                            </div>
-                        </div>
-
-                        <!-- Action Buttons -->
-                        <div class="flex items-center justify-between mt-8 pt-6 border-t border-gray-200">
-                            <button type="button" onclick="openPasswordModal()" class="px-6 py-3 border border-blue-500 text-blue-500 rounded-lg hover:bg-blue-50 transition duration-200 font-medium">
+                    
+                    <!-- Action Buttons -->
+                    <div class="px-6 pb-6">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <button onclick="openEditProfileModal()" class="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-6 py-4 rounded-xl font-bold transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center justify-center">
+                                <i class="fas fa-edit mr-2"></i>Edit Profile
+                            </button>
+                            <button onclick="openPasswordModal()" class="w-full bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white px-6 py-4 rounded-xl font-bold transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center justify-center">
                                 <i class="fas fa-key mr-2"></i>Change Password
                             </button>
-                            <button type="submit" class="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition duration-200 font-medium shadow-md hover:shadow-lg">
-                                <i class="fas fa-save mr-2"></i>Update Profile
-                            </button>
                         </div>
-                    </form>
+                    </div>
                 </div>
             </div>
+
+            <!-- Health Card Section (Only for PATIENT) -->
+            <div th:if="${user.role.name() == 'PATIENT' && user.healthCard != null}" class="space-y-6">
+                <div th:if="${user.role.name() == 'PATIENT' && user.healthCard != null}" class="bg-white rounded-2xl shadow-xl overflow-hidden transform transition-all duration-300 hover:shadow-2xl">
+                    <div class="bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 text-white px-6 py-4 relative overflow-hidden">
+                        <div class="absolute top-0 right-0 w-24 h-24 bg-white opacity-10 rounded-full -mr-12 -mt-12"></div>
+                        <div class="relative z-10 flex items-center justify-between">
+                            <h5 class="text-xl font-bold">
+                                <i class="fas fa-id-card mr-2"></i> Your Health Card
+                            </h5>
+                            <div class="bg-white/20 px-3 py-1 rounded-full">
+                                <span class="text-xs font-semibold">Active</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h6 class="text-lg font-semibold text-gray-700">
+                                <i class="fas fa-credit-card mr-2 text-blue-500"></i>Card Details
+                            </h6>
+                            <a th:href="@{/health-card/download}" 
+                               class="inline-flex items-center bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-4 py-2 rounded-lg font-medium transition duration-300 shadow-md hover:shadow-lg">
+                                <i class="fas fa-download mr-2"></i>Download
+                            </a>
+                        </div>
+                        
+                        <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-200">
+                            <div class="space-y-4">
+                                <!-- Health Card Details -->
+                                <div class="grid grid-cols-1 gap-4">
+                                    <div class="flex items-center bg-white rounded-lg p-3 shadow-sm">
+                                        <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center mr-3">
+                                            <i class="fas fa-id-badge text-blue-600 text-lg"></i>
+                                        </div>
+                                        <div class="flex-1">
+                                            <p class="text-xs text-gray-500 font-semibold">Card ID</p>
+                                            <p class="text-gray-800 font-mono text-sm font-medium" th:text="${#strings.toUpperCase(#strings.substring(user.healthCard.id, T(java.lang.Math).max(0, user.healthCard.id.length() - 6)))}"></p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="flex items-center bg-white rounded-lg p-3 shadow-sm">
+                                        <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center mr-3">
+                                            <i class="fas fa-user-circle text-blue-600 text-lg"></i>
+                                        </div>
+                                        <div class="flex-1">
+                                            <p class="text-xs text-gray-500 font-semibold">Patient Name</p>
+                                            <p class="text-gray-800 font-medium" th:text="${user.healthCard.patientName}"></p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="grid grid-cols-2 gap-3">
+                                        <div class="flex items-center bg-white rounded-lg p-3 shadow-sm">
+                                            <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center mr-3">
+                                                <i class="fas fa-calendar-plus text-green-600 text-lg"></i>
+                                            </div>
+                                            <div class="flex-1">
+                                                <p class="text-xs text-gray-500 font-semibold">Issued</p>
+                                                <p class="text-gray-800 text-sm font-medium" th:text="${#temporals.format(user.healthCard.createDate, 'dd-MM-yyyy')}"></p>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="flex items-center bg-white rounded-lg p-3 shadow-sm">
+                                            <div class="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center mr-3">
+                                                <i class="fas fa-calendar-times text-orange-600 text-lg"></i>
+                                            </div>
+                                            <div class="flex-1">
+                                                <p class="text-xs text-gray-500 font-semibold">Expires</p>
+                                                <p class="text-gray-800 text-sm font-medium" th:text="${#temporals.format(user.healthCard.expireDate, 'dd-MM-yyyy')}"></p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="flex items-center bg-white rounded-lg p-3 shadow-sm">
+                                        <div class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center mr-3">
+                                            <i class="fas fa-circle-check text-purple-600 text-lg"></i>
+                                        </div>
+                                        <div class="flex-1">
+                                            <p class="text-xs text-gray-500 font-semibold mb-1">Status</p>
+                                            <span th:if="${user.healthCard.status == 'ACTIVE'}" 
+                                                  class="inline-flex items-center bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-bold">
+                                                <i class="fas fa-check-circle mr-1"></i>ACTIVE
+                                            </span>
+                                            <span th:if="${user.healthCard.status != 'ACTIVE'}" 
+                                                  class="inline-flex items-center bg-red-100 text-red-800 px-3 py-1 rounded-full text-xs font-bold">
+                                                <i class="fas fa-times-circle mr-1"></i>INACTIVE
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- QR Code Preview -->
+                                <div class="flex flex-col items-center justify-center mt-4 pt-4 border-t border-blue-200">
+                                    <div class="bg-white p-4 rounded-lg border-2 border-blue-400 shadow-lg">
+                                        <img th:if="${user.healthCard.qrCode}" 
+                                             th:src="${user.healthCard.qrCode}" 
+                                             alt="Health Card QR Code" 
+                                             class="w-40 h-40 object-contain">
+                                        <div th:unless="${user.healthCard.qrCode}" 
+                                             class="w-40 h-40 flex items-center justify-center bg-gray-100 rounded">
+                                            <p class="text-gray-500 text-sm text-center">
+                                                <i class="fas fa-qrcode text-3xl mb-2"></i><br/>
+                                                QR Code not available
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <p class="text-xs text-gray-600 mt-3 text-center font-medium bg-white px-3 py-2 rounded-full shadow-sm">
+                                        <i class="fas fa-info-circle mr-1 text-blue-500"></i>Show this QR code to staff for verification
+                                    </p>
+                                </div>
+                            </div>
+                            
+                            <!-- Health Card Info Banner -->
+                            <div class="mt-4 bg-white rounded-lg p-4 border-l-4 border-yellow-400 shadow-sm">
+                                <p class="text-sm text-gray-700 flex items-start">
+                                    <i class="fas fa-lightbulb text-yellow-500 mr-2 mt-0.5 flex-shrink-0"></i>
+                                    <span><strong>Note:</strong> Your health card is valid for one year from the issue date. 
+                                    Please download and keep it safe. Present it at the hospital reception for quick identification and service.</span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Profile Modal -->
+    <div id="editProfileModal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 z-50 flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-4xl w-full transform transition-all my-8">
+            <!-- Modal Header -->
+            <div class="bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 text-white px-6 py-4 rounded-t-2xl relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-32 h-32 bg-white opacity-10 rounded-full -mr-16 -mt-16"></div>
+                <div class="relative z-10 flex items-center justify-between">
+                    <h3 class="text-2xl font-bold flex items-center">
+                        <i class="fas fa-edit mr-3"></i>Edit Profile Information
+                    </h3>
+                    <button type="button" onclick="closeEditProfileModal()" class="w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition duration-200 transform hover:scale-110">
+                        <i class="fas fa-times text-2xl"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Modal Body -->
+            <form th:action="@{/profile/update}" th:object="${updateRequest}" method="post" class="p-8">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Name -->
+                    <div class="md:col-span-2">
+                        <label for="name" class="block text-sm font-bold text-gray-700 mb-2 flex items-center">
+                            <i class="fas fa-user mr-2 text-blue-500"></i>Full Name
+                        </label>
+                        <input type="text" id="name" th:field="*{name}" 
+                               class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 hover:border-gray-300"
+                               placeholder="Enter your full name" required>
+                        <p th:if="${#fields.hasErrors('name')}" th:errors="*{name}" class="text-red-500 text-sm mt-1 flex items-center">
+                            <i class="fas fa-exclamation-circle mr-1"></i><span th:text="*{name}"></span>
+                        </p>
+                    </div>
+
+                    <!-- Email -->
+                    <div>
+                        <label for="email" class="block text-sm font-bold text-gray-700 mb-2 flex items-center">
+                            <i class="fas fa-envelope mr-2 text-blue-500"></i>Email Address
+                        </label>
+                        <input type="email" id="email" th:field="*{email}" 
+                               class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 hover:border-gray-300"
+                               placeholder="Enter your email" required>
+                        <p th:if="${#fields.hasErrors('email')}" th:errors="*{email}" class="text-red-500 text-sm mt-1 flex items-center">
+                            <i class="fas fa-exclamation-circle mr-1"></i><span th:text="*{email}"></span>
+                        </p>
+                    </div>
+
+                    <!-- Contact Number -->
+                    <div>
+                        <label for="contactNumber" class="block text-sm font-bold text-gray-700 mb-2 flex items-center">
+                            <i class="fas fa-phone mr-2 text-blue-500"></i>Contact Number
+                        </label>
+                        <input type="text" id="contactNumber" th:field="*{contactNumber}" 
+                               class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 hover:border-gray-300"
+                               placeholder="+94 77 123 4567" required>
+                        <p th:if="${#fields.hasErrors('contactNumber')}" th:errors="*{contactNumber}" class="text-red-500 text-sm mt-1 flex items-center">
+                            <i class="fas fa-exclamation-circle mr-1"></i><span th:text="*{contactNumber}"></span>
+                        </p>
+                    </div>
+
+                    <!-- Date of Birth -->
+                    <div>
+                        <label for="dateOfBirth" class="block text-sm font-bold text-gray-700 mb-2 flex items-center">
+                            <i class="fas fa-calendar mr-2 text-blue-500"></i>Date of Birth
+                        </label>
+                        <input type="date" id="dateOfBirth" th:field="*{dateOfBirth}" 
+                               class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 hover:border-gray-300"
+                               required>
+                        <p th:if="${#fields.hasErrors('dateOfBirth')}" th:errors="*{dateOfBirth}" class="text-red-500 text-sm mt-1 flex items-center">
+                            <i class="fas fa-exclamation-circle mr-1"></i><span th:text="*{dateOfBirth}"></span>
+                        </p>
+                    </div>
+
+                    <!-- Gender -->
+                    <div>
+                        <label for="gender" class="block text-sm font-bold text-gray-700 mb-2 flex items-center">
+                            <i class="fas fa-venus-mars mr-2 text-blue-500"></i>Gender
+                        </label>
+                        <select id="gender" th:field="*{gender}" 
+                                class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 hover:border-gray-300"
+                                required>
+                            <option value="">Select Gender</option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Other">Other</option>
+                        </select>
+                        <p th:if="${#fields.hasErrors('gender')}" th:errors="*{gender}" class="text-red-500 text-sm mt-1 flex items-center">
+                            <i class="fas fa-exclamation-circle mr-1"></i><span th:text="*{gender}"></span>
+                        </p>
+                    </div>
+
+                    <!-- Address -->
+                    <div class="md:col-span-2">
+                        <label for="address" class="block text-sm font-bold text-gray-700 mb-2 flex items-center">
+                            <i class="fas fa-map-marker-alt mr-2 text-blue-500"></i>Address
+                        </label>
+                        <textarea id="address" th:field="*{address}" rows="3"
+                                  class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 hover:border-gray-300"
+                                  placeholder="Enter your complete address" required></textarea>
+                        <p th:if="${#fields.hasErrors('address')}" th:errors="*{address}" class="text-red-500 text-sm mt-1 flex items-center">
+                            <i class="fas fa-exclamation-circle mr-1"></i><span th:text="*{address}"></span>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex items-center justify-end mt-8 pt-6 border-t-2 border-gray-100">
+                    <button type="button" onclick="closeEditProfileModal()" class="px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-all duration-200 font-bold flex items-center justify-center mr-3">
+                        <i class="fas fa-times mr-2"></i>Cancel
+                    </button>
+                    <button type="submit" class="px-8 py-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl transition-all duration-300 font-bold shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center justify-center">
+                        <i class="fas fa-save mr-2"></i>Update Profile
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -337,6 +481,24 @@
     </div>
 
     <script>
+        // Edit Profile Modal Functions
+        function openEditProfileModal() {
+            document.getElementById('editProfileModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden'; // Prevent background scrolling
+        }
+
+        function closeEditProfileModal() {
+            document.getElementById('editProfileModal').classList.add('hidden');
+            document.body.style.overflow = 'auto'; // Re-enable scrolling
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('editProfileModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeEditProfileModal();
+            }
+        });
+
         // Auto-hide success/error messages after 5 seconds
         setTimeout(function() {
             const alerts = document.querySelectorAll('[role="alert"]');
@@ -348,6 +510,15 @@
                 }, 500);
             });
         }, 5000);
+
+        // Show edit profile modal if there are errors or success messages
+        window.addEventListener('DOMContentLoaded', function() {
+            const hasMessages = document.querySelector('[role="alert"]');
+            if (hasMessages) {
+                // Show the edit profile modal automatically if there are validation errors
+                openEditProfileModal();
+            }
+        });
 
         // Password Modal Functions
         function openPasswordModal() {
@@ -453,6 +624,7 @@
         // Close modal with Escape key
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
+                closeEditProfileModal();
                 closePasswordModal();
             }
         });

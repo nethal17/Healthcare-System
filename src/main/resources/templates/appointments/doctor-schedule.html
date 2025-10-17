@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Schedule - Healthcare System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+</head>
+<body class="bg-gray-50">
+    <!-- Navbar -->
+    <div th:replace="fragments/navbar :: navbar(${user})"></div>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Page Header -->
+        <div class="mb-8">
+            <nav class="flex mb-4" aria-label="Breadcrumb">
+                <ol class="inline-flex items-center space-x-1 md:space-x-3">
+                    <li class="inline-flex items-center">
+                        <a th:href="@{/dashboard}" class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-blue-600">
+                            <i class="fas fa-home mr-2"></i>
+                            Dashboard
+                        </a>
+                    </li>
+                    <li>
+                        <div class="flex items-center">
+                            <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
+                            <span class="text-sm font-medium text-gray-500">My Schedule</span>
+                        </div>
+                    </li>
+                </ol>
+            </nav>
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-4xl font-bold text-gray-900 flex items-center">
+                        <i class="fas fa-calendar-alt mr-3 text-blue-500"></i> My Appointment Schedule
+                    </h2>
+                    <p class="text-gray-600 mt-2 text-lg">View and manage your upcoming appointments</p>
+                </div>
+                <div th:if="${hospital != null}" class="hidden md:block">
+                    <div class="bg-blue-50 px-4 py-3 rounded-lg border border-blue-200">
+                        <div class="flex items-center space-x-2">
+                            <i class="fas fa-hospital text-blue-600"></i>
+                            <div>
+                                <p class="text-xs text-gray-600 font-semibold">Hospital</p>
+                                <p class="text-sm font-medium text-blue-800" th:text="${hospital.name}">Hospital Name</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Doctor Info Card -->
+        <div class="bg-white rounded-2xl shadow-lg p-6 mb-8">
+            <div class="flex items-center space-x-4">
+                <div class="w-16 h-16 rounded-full bg-blue-500 flex items-center justify-center text-white text-2xl font-bold">
+                    <i class="fas fa-user-md"></i>
+                </div>
+                <div>
+                    <h3 class="text-2xl font-bold text-gray-900" th:text="${doctor.name}">Dr. Name</h3>
+                    <p class="text-gray-600" th:text="${doctor.specialization}">Specialization</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Appointments List -->
+        <div th:if="${appointments != null && !appointments.isEmpty()}" class="space-y-4">
+            <div class="bg-white rounded-lg shadow-md p-6 mb-4">
+                <h3 class="text-xl font-bold text-gray-900 mb-2">
+                    <i class="fas fa-calendar-check mr-2 text-blue-500"></i>
+                    Total Appointments: <span th:text="${appointments.size()}">0</span>
+                </h3>
+            </div>
+
+            <!-- Appointment Cards -->
+            <div th:each="appointment : ${appointments}" 
+                 class="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 border-l-4"
+                 th:classappend="${appointment.status == 'CONFIRMED' ? 'border-green-500' : (appointment.status == 'CANCELLED' ? 'border-red-500' : 'border-blue-500')}">
+                <div class="p-6">
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="flex-1">
+                            <div class="flex items-center space-x-3 mb-3">
+                                <h4 class="text-xl font-bold text-gray-900" th:text="${appointment.patientName}">Patient Name</h4>
+                                <span th:if="${appointment.status == 'CONFIRMED'}" 
+                                      class="inline-flex items-center bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-bold">
+                                    <i class="fas fa-check-circle mr-1"></i>CONFIRMED
+                                </span>
+                                <span th:if="${appointment.status == 'CANCELLED'}" 
+                                      class="inline-flex items-center bg-red-100 text-red-800 px-3 py-1 rounded-full text-xs font-bold">
+                                    <i class="fas fa-times-circle mr-1"></i>CANCELLED
+                                </span>
+                                <span th:if="${appointment.status == 'COMPLETED'}" 
+                                      class="inline-flex items-center bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs font-bold">
+                                    <i class="fas fa-check-double mr-1"></i>COMPLETED
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <!-- Date & Time -->
+                        <div class="flex items-start space-x-3">
+                            <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                                <i class="fas fa-calendar-day text-blue-600 text-lg"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-500 font-semibold uppercase">Date & Time</p>
+                                <p class="text-sm font-medium text-gray-900" th:text="${#temporals.format(appointment.appointmentDateTime, 'dd MMM yyyy')}"></p>
+                                <p class="text-sm font-medium text-blue-600" th:text="${#temporals.format(appointment.appointmentDateTime, 'hh:mm a')}"></p>
+                            </div>
+                        </div>
+
+                        <!-- Patient ID -->
+                        <div class="flex items-start space-x-3">
+                            <div class="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0">
+                                <i class="fas fa-id-card text-purple-600 text-lg"></i>
+                            </div>
+                            <div>
+                        <p class="text-xs text-gray-500 font-semibold uppercase">Patient</p>
+                        <p class="text-sm font-medium text-gray-900" th:text="${appointment.patientName}"></p>
+                            </div>
+                        </div>
+
+                        <!-- Appointment ID -->
+                        <div class="flex items-start space-x-3">
+                            <div class="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
+                                <i class="fas fa-hashtag text-amber-600 text-lg"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-500 font-semibold uppercase">Appointment ID</p>
+                                <p class="text-sm font-mono font-medium text-gray-900" th:text="${#strings.substring(appointment.id, 0, 8) + '...'}"></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Purpose & Notes -->
+                    <div th:if="${appointment.purpose != null && !appointment.purpose.isEmpty()}" 
+                         class="mt-4 pt-4 border-t border-gray-200">
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <p class="text-xs text-gray-500 font-semibold uppercase mb-2">
+                                <i class="fas fa-clipboard-list mr-1"></i>Purpose
+                            </p>
+                            <p class="text-sm text-gray-900" th:text="${appointment.purpose}">Purpose of visit</p>
+                        </div>
+                    </div>
+
+                    <div th:if="${appointment.notes != null && !appointment.notes.isEmpty()}" 
+                         class="mt-3">
+                        <div class="bg-blue-50 rounded-lg p-4">
+                            <p class="text-xs text-gray-500 font-semibold uppercase mb-2">
+                                <i class="fas fa-notes-medical mr-1"></i>Patient Notes
+                            </p>
+                            <p class="text-sm text-gray-900" th:text="${appointment.notes}">Additional notes</p>
+                        </div>
+                    </div>
+
+                    <!-- Created At -->
+                    <div th:if="${appointment.createdAt != null}" class="mt-4 pt-4 border-t border-gray-200">
+                        <p class="text-xs text-gray-500">
+                            <i class="fas fa-clock mr-1"></i>
+                            Booked on <span th:text="${#temporals.format(appointment.createdAt, 'dd MMM yyyy, hh:mm a')}"></span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- No Appointments Message -->
+        <div th:if="${appointments == null || appointments.isEmpty()}" 
+             class="bg-white rounded-2xl shadow-lg p-12 text-center">
+            <div class="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <i class="fas fa-calendar-xmark text-4xl text-gray-400"></i>
+            </div>
+            <h3 class="text-2xl font-bold text-gray-900 mb-3">No Appointments Yet</h3>
+            <p class="text-gray-600 mb-6">You don't have any scheduled appointments at the moment.</p>
+        </div>
+    </div>
+</body>
+</html>
