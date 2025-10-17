@@ -21,30 +21,8 @@
     </script>
 </head>
 <body class="bg-gray-50">
-    <!-- Navbar -->
-    <nav class="bg-gray-800 shadow-lg">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-16">
-                <div class="flex items-center">
-                    <a href="#" class="flex items-center text-white text-xl font-bold">
-                        <i class="fas fa-hospital mr-2"></i>
-                        Healthcare System
-                    </a>
-                </div>
-                <div class="flex items-center space-x-4">
-                    <a th:href="@{/dashboard}" class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">
-                        <i class="fas fa-home mr-1"></i> Dashboard
-                    </a>
-                    <a th:href="@{/staff/scanner}" class="text-white bg-gray-700 px-3 py-2 rounded-md text-sm font-medium">
-                        <i class="fas fa-qrcode mr-1"></i> QR Scanner
-                    </a>
-                    <a th:href="@{/logout}" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition duration-200">
-                        <i class="fas fa-sign-out-alt mr-1"></i> Logout
-                    </a>
-                </div>
-            </div>
-        </div>
-    </nav>
+    <!-- Include navbar -->
+    <div th:replace="~{fragments/navbar :: navbar(${user})}"></div>
 
     <!-- Main Content -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
