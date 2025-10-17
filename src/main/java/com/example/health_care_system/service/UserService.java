@@ -6,10 +6,12 @@ import com.example.health_care_system.dto.UpdateProfileRequest;
 import com.example.health_care_system.dto.UserDTO;
 import com.example.health_care_system.model.Patient;
 import com.example.health_care_system.model.Doctor;
+import com.example.health_care_system.model.Staff;
 import com.example.health_care_system.model.User;
 import com.example.health_care_system.model.UserRole;
 import com.example.health_care_system.repository.PatientRepository;
 import com.example.health_care_system.repository.DoctorRepository;
+import com.example.health_care_system.repository.StaffRepository;
 import com.example.health_care_system.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -26,6 +28,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final PatientRepository patientRepository;
     private final DoctorRepository doctorRepository;
+    private final StaffRepository staffRepository;
     private final BCryptPasswordEncoder passwordEncoder;
     private final QRCodeService qrCodeService;
     private final HealthCardService healthCardService;
@@ -109,7 +112,19 @@ public class UserService {
             return convertToDTO(doctor);
         }
         
-        // Try to find as regular User (ADMIN, STAFF)
+        // Try to find as Staff
+        Optional<Staff> staffOptional = staffRepository.findByEmail(request.getEmail());
+        if (staffOptional.isPresent()) {
+            Staff staff = staffOptional.get();
+            
+            if (!passwordEncoder.matches(request.getPassword(), staff.getPassword())) {
+                throw new RuntimeException("Invalid email or password");
+            }
+            
+            return convertToDTO(staff);
+        }
+        
+        // Try to find as regular User (ADMIN)
         Optional<User> userOptional = userRepository.findByEmail(request.getEmail());
         if (userOptional.isPresent()) {
             User user = userOptional.get();
@@ -137,6 +152,12 @@ public class UserService {
             return convertToDTO(doctor.get());
         }
         
+        // Try Staff
+        Optional<Staff> staff = staffRepository.findById(id);
+        if (staff.isPresent()) {
+            return convertToDTO(staff.get());
+        }
+        
         // Try regular User
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -154,6 +175,12 @@ public class UserService {
         Optional<Doctor> doctor = doctorRepository.findByEmail(email);
         if (doctor.isPresent()) {
             return convertToDTO(doctor.get());
+        }
+        
+        // Try Staff
+        Optional<Staff> staff = staffRepository.findByEmail(email);
+        if (staff.isPresent()) {
+            return convertToDTO(staff.get());
         }
         
         // Try regular User
@@ -184,6 +211,18 @@ public class UserService {
             });
         }
         
+        // Handle Doctor-specific fields
+        if (user instanceof Doctor) {
+            Doctor doctor = (Doctor) user;
+            dto.setHospitalId(doctor.getHospitalId()); // Doctor's hospital ID
+        }
+        
+        // Handle Staff-specific fields
+        if (user instanceof Staff) {
+            Staff staff = (Staff) user;
+            dto.setHospitalId(staff.getHospitalId()); // Staff's hospital ID
+        }
+        
         return dto;
     }
     
@@ -198,6 +237,12 @@ public class UserService {
         Optional<Doctor> doctor = doctorRepository.findById(id);
         if (doctor.isPresent()) {
             return doctor.get();
+        }
+        
+        // Try Staff
+        Optional<Staff> staff = staffRepository.findById(id);
+        if (staff.isPresent()) {
+            return staff.get();
         }
         
         // Try regular User
@@ -262,7 +307,30 @@ public class UserService {
             return convertToDTO(updatedDoctor);
         }
         
-        // Try to find as regular User (ADMIN, STAFF)
+        // Try to find as Staff
+        Optional<Staff> staffOptional = staffRepository.findById(userId);
+        if (staffOptional.isPresent()) {
+            Staff staff = staffOptional.get();
+            
+            // Check if email is being changed and if it's already taken
+            if (!staff.getEmail().equals(request.getEmail())) {
+                if (staffRepository.existsByEmail(request.getEmail())) {
+                    throw new RuntimeException("Email already registered");
+                }
+            }
+            
+            // Update staff details
+            staff.setName(request.getName());
+            staff.setEmail(request.getEmail());
+            staff.setContactNumber(request.getContactNumber());
+            staff.setGender(request.getGender());
+            staff.setUpdatedAt(LocalDateTime.now());
+            
+            Staff updatedStaff = staffRepository.save(staff);
+            return convertToDTO(updatedStaff);
+        }
+        
+        // Try to find as regular User (ADMIN)
         Optional<User> userOptional = userRepository.findById(userId);
         if (userOptional.isPresent()) {
             User user = userOptional.get();
@@ -323,7 +391,24 @@ public class UserService {
             return;
         }
         
-        // Try to find as regular User (ADMIN, STAFF)
+        // Try to find as Staff
+        Optional<Staff> staffOptional = staffRepository.findById(userId);
+        if (staffOptional.isPresent()) {
+            Staff staff = staffOptional.get();
+            
+            // Verify current password
+            if (!passwordEncoder.matches(currentPassword, staff.getPassword())) {
+                throw new RuntimeException("Current password is incorrect");
+            }
+            
+            // Update password
+            staff.setPassword(passwordEncoder.encode(newPassword));
+            staff.setUpdatedAt(LocalDateTime.now());
+            staffRepository.save(staff);
+            return;
+        }
+        
+        // Try to find as regular User (ADMIN)
         Optional<User> userOptional = userRepository.findById(userId);
         if (userOptional.isPresent()) {
             User user = userOptional.get();

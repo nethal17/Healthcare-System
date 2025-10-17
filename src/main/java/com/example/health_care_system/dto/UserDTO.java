@@ -21,4 +21,5 @@ public class UserDTO {
     private String contactNumber;
     private String qrCode; // Base64 encoded QR code image
     private HealthCardDTO healthCard; // Health card information for patients
+    private String hospitalId; // Hospital assignment for staff/doctors
 }
