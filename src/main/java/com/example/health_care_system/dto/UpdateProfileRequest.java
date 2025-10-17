@@ -23,6 +23,8 @@ public class UpdateProfileRequest {
     @NotBlank(message = "Gender is required")
     private String gender;
     
+    private String bloodGroup; // Optional field, only for patients
+    
     @NotBlank(message = "Address is required")
     @Size(max = 500, message = "Address must not exceed 500 characters")
     private String address;

@@ -13,6 +13,7 @@ public class HealthCardDTO {
     private String id;
     private String patientId;
     private String patientName;
+    private String bloodGroup;
     private String qrCode;
     private String status;
     private LocalDate createDate;

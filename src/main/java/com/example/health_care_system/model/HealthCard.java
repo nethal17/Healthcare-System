@@ -22,6 +22,8 @@ public class HealthCard {
     
     private String patientName;
     
+    private String bloodGroup;
+    
     private String qrCode; // Base64 encoded QR code image
     
     private String status; // "ACTIVE" or "INACTIVE"

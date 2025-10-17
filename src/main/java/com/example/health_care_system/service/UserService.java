@@ -52,6 +52,7 @@ public class UserService {
         patient.setRole(UserRole.PATIENT);
         patient.setDateOfBirth(request.getDateOfBirth());
         patient.setGender(request.getGender());
+        patient.setBloodGroup(request.getBloodGroup());
         patient.setAddress(request.getAddress());
         patient.setContactNumber(request.getContactNumber());
         patient.setActive(true);
@@ -202,11 +203,17 @@ public class UserService {
         if (user instanceof Patient) {
             Patient patient = (Patient) user;
             dto.setDateOfBirth(patient.getDateOfBirth());
+            dto.setBloodGroup(patient.getBloodGroup());
             dto.setAddress(patient.getAddress());
             dto.setQrCode(patient.getQrCode());
             
-            // Include health card information
+            // Include health card information and sync blood group
             healthCardService.getHealthCardByPatientId(patient.getId()).ifPresent(healthCard -> {
+                // Sync blood group from patient to health card if missing or different
+                if (healthCard.getBloodGroup() == null || !healthCard.getBloodGroup().equals(patient.getBloodGroup())) {
+                    healthCard.setBloodGroup(patient.getBloodGroup());
+                    healthCardService.updateHealthCard(healthCard);
+                }
                 dto.setHealthCard(healthCardService.convertToDTO(healthCard));
             });
         }
@@ -269,6 +276,7 @@ public class UserService {
             patient.setContactNumber(request.getContactNumber());
             patient.setDateOfBirth(request.getDateOfBirth());
             patient.setGender(request.getGender());
+            patient.setBloodGroup(request.getBloodGroup());
             patient.setAddress(request.getAddress());
             patient.setUpdatedAt(LocalDateTime.now());
             
@@ -277,6 +285,7 @@ public class UserService {
             // Update health card if exists
             healthCardService.getHealthCardByPatientId(patient.getId()).ifPresent(healthCard -> {
                 healthCard.setPatientName(request.getName());
+                healthCard.setBloodGroup(request.getBloodGroup());
                 healthCard.setUpdatedAt(LocalDateTime.now());
                 healthCardService.updateHealthCard(healthCard);
             });

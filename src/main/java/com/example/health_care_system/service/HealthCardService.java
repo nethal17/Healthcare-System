@@ -46,6 +46,7 @@ public class HealthCardService {
         HealthCard healthCard = new HealthCard();
         healthCard.setPatientId(patient.getId());
         healthCard.setPatientName(patient.getName());
+        healthCard.setBloodGroup(patient.getBloodGroup());
         healthCard.setQrCode(qrCode);
         healthCard.setStatus("ACTIVE");
         healthCard.setCreateDate(LocalDate.now());
@@ -122,6 +123,7 @@ public class HealthCardService {
         dto.setId(healthCard.getId());
         dto.setPatientId(healthCard.getPatientId());
         dto.setPatientName(healthCard.getPatientName());
+        dto.setBloodGroup(healthCard.getBloodGroup());
         dto.setQrCode(healthCard.getQrCode());
         dto.setStatus(healthCard.getStatus());
         dto.setCreateDate(healthCard.getCreateDate());
@@ -219,6 +221,17 @@ public class HealthCardService {
         // Show only last 12 digits
         String lastTwelveDigits = fullCardId.substring(Math.max(0, fullCardId.length() - 12));
         g2d.drawString(lastTwelveDigits.toUpperCase(), 50, contentY + 140);
+        
+        // Blood Group Section
+        g2d.setColor(new Color(147, 197, 253)); // Blue 300
+        g2d.setFont(new Font("SansSerif", Font.BOLD, 14));
+        g2d.drawString("BLOOD GROUP", 400, contentY + 110);
+        
+        g2d.setColor(new Color(220, 38, 38)); // Red 600
+        g2d.setFont(new Font("SansSerif", Font.BOLD, 28));
+        String bloodGroup = healthCard.getBloodGroup() != null && !healthCard.getBloodGroup().isEmpty() 
+                            ? healthCard.getBloodGroup() : "N/A";
+        g2d.drawString(bloodGroup, 400, contentY + 145);
         
         // Date Information Section
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd MMM yyyy");
