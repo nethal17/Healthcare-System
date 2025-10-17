@@ -61,7 +61,7 @@ public class PaymentController {
     @Autowired
     private EmailService emailService;
 
-    @GetMapping
+    @GetMapping("/payment")
     public String index(){
         return "index";
     }
