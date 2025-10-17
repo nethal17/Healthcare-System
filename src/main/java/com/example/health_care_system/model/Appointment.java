@@ -44,6 +44,15 @@ public class Appointment {
     
     private LocalDateTime updatedAt;
     
+    // Check-in tracking
+    private boolean checkedIn = false;
+    
+    private LocalDateTime checkInTime;
+    
+    private String checkInStaffId;
+    
+    private String checkInStaffName;
+    
     public enum AppointmentStatus {
         SCHEDULED,
         COMPLETED,
