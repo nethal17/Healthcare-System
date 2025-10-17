@@ -33,6 +33,9 @@ import java.time.LocalTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Comparator;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Controller
 @RequestMapping("/appointments")
@@ -675,6 +678,57 @@ public class AppointmentController {
         model.addAttribute("hoursRemaining", hoursRemaining);
         
         return "appointments/my-appointments";
+    }
+    
+    /**
+     * View doctor's appointments schedule
+     */
+    @GetMapping("/doctor-schedule")
+    public String doctorSchedule(Model model, HttpSession session) {
+        UserDTO user = (UserDTO) session.getAttribute("user");
+        if (user == null) {
+            return "redirect:/login";
+        }
+        
+        // Verify user is a doctor
+        if (!"DOCTOR".equals(user.getRole().name())) {
+            return "redirect:/dashboard";
+        }
+        
+        Doctor doctor = doctorRepository.findById(user.getId()).orElse(null);
+        if (doctor == null) {
+            return "redirect:/dashboard";
+        }
+        
+    // Get doctor's appointments
+    List<Appointment> appointments = appointmentService.getDoctorAppointments(doctor.getId());
+
+    // Arrange appointments: upcoming first (nearest date/time first), then past appointments
+    LocalDateTime now = LocalDateTime.now();
+    List<Appointment> upcoming = appointments.stream()
+        .filter(a -> a.getAppointmentDateTime() != null && !a.getAppointmentDateTime().isBefore(now))
+        .sorted(Comparator.comparing(Appointment::getAppointmentDateTime))
+        .collect(Collectors.toList());
+
+    List<Appointment> past = appointments.stream()
+        .filter(a -> a.getAppointmentDateTime() != null && a.getAppointmentDateTime().isBefore(now))
+        .sorted(Comparator.comparing(Appointment::getAppointmentDateTime).reversed())
+        .collect(Collectors.toList());
+
+    appointments = Stream.concat(upcoming.stream(), past.stream()).collect(Collectors.toList());
+        
+        // Get hospital details
+        Hospital hospital = null;
+        if (doctor.getHospitalId() != null) {
+            hospital = hospitalRepository.findById(doctor.getHospitalId()).orElse(null);
+        }
+        
+        model.addAttribute("doctor", doctor);
+        model.addAttribute("hospital", hospital);
+        model.addAttribute("appointments", appointments);
+        model.addAttribute("user", user);
+        
+        return "appointments/doctor-schedule";
     }
     
     /**
