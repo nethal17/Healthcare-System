@@ -16,6 +16,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -340,5 +341,34 @@ public class UserService {
         }
         
         throw new RuntimeException("User not found");
+    }
+    
+    // User Management Methods for Admin
+    public List<Patient> getAllPatients() {
+        return patientRepository.findAll();
+    }
+    
+    public List<Doctor> getAllDoctors() {
+        return doctorRepository.findAll();
+    }
+    
+    public List<User> getUsersByRole(UserRole role) {
+        return userRepository.findByRole(role);
+    }
+    
+    public int getTotalUserCount() {
+        return (int) (patientRepository.count() + doctorRepository.count() + userRepository.count());
+    }
+    
+    public int getPatientCount() {
+        return (int) patientRepository.count();
+    }
+    
+    public int getDoctorCount() {
+        return (int) doctorRepository.count();
+    }
+    
+    public int getStaffCount() {
+        return userRepository.findByRole(UserRole.STAFF).size();
     }
 }
