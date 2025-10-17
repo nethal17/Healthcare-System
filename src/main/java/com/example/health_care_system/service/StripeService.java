@@ -3,7 +3,6 @@ package com.example.health_care_system.service;
 import com.example.health_care_system.dto.PaymentRequest;
 import com.example.health_care_system.dto.StripeResponse;
 import com.stripe.Stripe;
-import com.stripe.exception.StripeException;
 import com.stripe.model.checkout.Session;
 import com.stripe.param.checkout.SessionCreateParams;
 import org.springframework.beans.factory.annotation.Value;
@@ -63,8 +62,8 @@ public class StripeService {
             // Create new session
             Session session = null;
             try {
-                session = Session.create(params);
-            } catch (StripeException e) {
+                session = createSession(params);
+            } catch (Exception e) {
                 //log the error
                 System.err.println("Stripe error: " + e.getMessage());
                 e.printStackTrace();
@@ -96,6 +95,11 @@ public class StripeService {
                     .build();
         }
 
+        /**
+         * Extracted for testing so it can be spied and stubbed in unit tests.
+         */
+        protected Session createSession(SessionCreateParams params) throws Exception {
+            return Session.create(params);
+        }
+
     }
-
-

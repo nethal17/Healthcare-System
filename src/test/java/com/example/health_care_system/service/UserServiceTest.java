@@ -3,6 +3,7 @@ package com.example.health_care_system.service;
 import com.example.health_care_system.dto.LoginRequest;
 import com.example.health_care_system.dto.RegisterRequest;
 import com.example.health_care_system.dto.UserDTO;
+import com.example.health_care_system.model.HealthCard;
 import com.example.health_care_system.model.Patient;
 import com.example.health_care_system.model.User;
 import com.example.health_care_system.model.UserRole;
@@ -43,6 +44,9 @@ class UserServiceTest {
     @Mock
     private QRCodeService qrCodeService;
 
+    @Mock
+    private HealthCardService healthCardService; // added mock to prevent NPE
+
     @InjectMocks
     private UserService userService;
 
@@ -82,6 +86,11 @@ class UserServiceTest {
         loginRequest = new LoginRequest();
         loginRequest.setEmail("patient@test.com");
         loginRequest.setPassword("password123");
+
+        // Default healthCardService behavior to avoid NPEs
+        // Use lenient stubbing because not every test will call these methods
+        org.mockito.Mockito.lenient().when(healthCardService.getHealthCardByPatientId(anyString())).thenReturn(Optional.empty());
+        org.mockito.Mockito.lenient().when(healthCardService.createHealthCard(any(Patient.class))).thenReturn(new HealthCard());
     }
 
     @Test
