@@ -11,6 +11,7 @@ import com.example.health_care_system.service.AppointmentService;
 import com.example.health_care_system.service.PaymentService;
 import com.example.health_care_system.service.PdfGenerationService;
 import com.example.health_care_system.service.TimeSlotReservationService;
+import com.example.health_care_system.service.EmailService;
 import com.example.health_care_system.repository.AppointmentRepository;
 import com.example.health_care_system.repository.HospitalRepository;
 import com.example.health_care_system.repository.DoctorRepository;
@@ -61,6 +62,9 @@ public class AppointmentController {
     
     @Autowired
     private TimeSlotReservationService reservationService;
+    
+    @Autowired
+    private EmailService emailService;
     
     /**
      * Step 1: Show all hospitals to select from
@@ -288,6 +292,20 @@ public class AppointmentController {
                     notes != null ? notes : ""
                 );
                 
+                // Send confirmation email for government hospital
+                try {
+                    Doctor doctor = doctorRepository.findById(doctorId).orElse(null);
+                    if (doctor != null) {
+                        Hospital hospital = hospitalRepository.findById(doctor.getHospitalId()).orElse(null);
+                        if (hospital != null) {
+                            emailService.sendGovernmentAppointmentConfirmation(patient, appointment, doctor, hospital);
+                        }
+                    }
+                } catch (Exception e) {
+                    // Log email error but don't fail the appointment
+                    System.err.println("Failed to send confirmation email: " + e.getMessage());
+                }
+                
                 // Redirect to success page
                 redirectAttributes.addFlashAttribute("success", "Appointment booked successfully!");
                 redirectAttributes.addFlashAttribute("appointmentId", appointment.getId());
@@ -431,6 +449,14 @@ public class AppointmentController {
                             hospital.getHospitalCharges()
                         );
                         session.setAttribute("paymentId", payment.getId());
+                        
+                        // Send confirmation email for cash payment
+                        try {
+                            emailService.sendCashPaymentAppointmentConfirmation(patient, appointment, doctor, hospital, payment);
+                        } catch (Exception e) {
+                            // Log email error but don't fail the appointment
+                            System.err.println("Failed to send confirmation email: " + e.getMessage());
+                        }
                     }
                 }
             }
@@ -574,6 +600,20 @@ public class AppointmentController {
                 sessionId,  // Stripe session ID as transaction ID
                 hospital.getHospitalCharges()
             );
+            
+            // Send confirmation email for card payment
+            try {
+                emailService.sendCardPaymentAppointmentConfirmation(
+                    (Patient) patientRepository.findById(user.getId()).orElse(null),
+                    appointment,
+                    doctor,
+                    hospital,
+                    payment
+                );
+            } catch (Exception e) {
+                // Log email error but don't fail the payment
+                System.err.println("Failed to send confirmation email: " + e.getMessage());
+            }
             
             // Clear session data
             session.removeAttribute("appointmentId");
