@@ -12,11 +12,17 @@ import com.example.health_care_system.repository.HospitalRepository;
 import com.example.health_care_system.repository.PatientRepository;
 import com.example.health_care_system.service.AppointmentService;
 import com.example.health_care_system.service.PaymentService;
+import com.example.health_care_system.service.PdfGenerationService;
+import com.example.health_care_system.service.EmailService;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
@@ -24,6 +30,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Map;
 
 @Controller
@@ -47,6 +54,12 @@ public class PaymentController {
     
     @Autowired
     private PaymentService paymentService;
+
+    @Autowired
+    private PdfGenerationService pdfGenerationService;
+    
+    @Autowired
+    private EmailService emailService;
 
     @GetMapping
     public String index(){
@@ -153,6 +166,14 @@ public class PaymentController {
                         policyNumber
                     );
                     session.setAttribute("paymentId", payment.getId());
+                    
+                    // Send confirmation email for insurance payment
+                    try {
+                        emailService.sendInsuranceAppointmentConfirmation(patient, appointment, doctor, hospital, payment);
+                    } catch (Exception e) {
+                        // Log email error but don't fail the appointment
+                        System.err.println("Failed to send confirmation email: " + e.getMessage());
+                    }
                 }
             }
             
@@ -211,6 +232,75 @@ public class PaymentController {
         model.addAttribute("policyNumber", policyNumber);
         
         return "PendingInsuranceRequest";
+    }
+
+    /**
+     * Download insurance appointment confirmation PDF
+     */
+    @GetMapping("/appointments/download-insurance-confirmation/{appointmentId}")
+    public ResponseEntity<byte[]> downloadInsuranceConfirmation(
+            @PathVariable String appointmentId,
+            HttpSession session) {
+        
+        try {
+            UserDTO user = (UserDTO) session.getAttribute("user");
+            if (user == null) {
+                return ResponseEntity.status(401).build();
+            }
+
+            // Get appointment
+            Appointment appointment = appointmentRepository.findById(appointmentId).orElse(null);
+            if (appointment == null) {
+                return ResponseEntity.notFound().build();
+            }
+
+            // Get patient
+            Patient patient = patientRepository.findById(user.getId()).orElse(null);
+            if (patient == null) {
+                return ResponseEntity.notFound().build();
+            }
+
+            // Get doctor and hospital
+            Doctor doctor = doctorRepository.findById(appointment.getDoctorId()).orElse(null);
+            Hospital hospital = null;
+            if (doctor != null) {
+                hospital = hospitalRepository.findById(doctor.getHospitalId()).orElse(null);
+            }
+
+            // Get insurance information from session
+            String insuranceProvider = (String) session.getAttribute("insuranceProvider");
+            String policyNumber = (String) session.getAttribute("policyNumber");
+
+            // Generate PDF
+            byte[] pdfBytes = pdfGenerationService.generateInsuranceAppointmentPdf(
+                    appointment,
+                    patient,
+                    doctor,
+                    hospital,
+                    insuranceProvider,
+                    policyNumber
+            );
+
+            // Create filename with appointment date
+            String dateStr = appointment.getAppointmentDateTime() != null ?
+                    appointment.getAppointmentDateTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")) :
+                    LocalDate.now().toString();
+            String filename = "Insurance_Appointment_" + appointmentId + "_" + dateStr + ".pdf";
+
+            // Return PDF as download
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_PDF);
+            headers.setContentDispositionFormData("attachment", filename);
+            headers.setCacheControl("must-revalidate, post-check=0, pre-check=0");
+
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .body(pdfBytes);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().build();
+        }
     }
 
 }

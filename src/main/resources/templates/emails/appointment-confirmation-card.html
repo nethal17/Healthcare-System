@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Appointment Confirmation - Payment Successful</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .email-container {
+            background-color: #ffffff;
+            margin: 20px auto;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 600;
+        }
+        .header p {
+            margin: 10px 0 0 0;
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        .content {
+            padding: 30px 20px;
+        }
+        .greeting {
+            font-size: 18px;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .success-badge {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+        .success-badge .icon {
+            font-size: 48px;
+            color: #28a745;
+            margin-bottom: 10px;
+        }
+        .success-badge h2 {
+            color: #155724;
+            margin: 0 0 5px 0;
+            font-size: 20px;
+        }
+        .success-badge p {
+            color: #155724;
+            margin: 0;
+            font-size: 14px;
+        }
+        .info-section {
+            background-color: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+        .info-section h3 {
+            color: #667eea;
+            margin: 0 0 15px 0;
+            font-size: 16px;
+            font-weight: 600;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #dee2e6;
+        }
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        .info-label {
+            font-weight: 600;
+            color: #666;
+            flex: 1;
+        }
+        .info-value {
+            color: #333;
+            flex: 2;
+            text-align: right;
+        }
+        .payment-success {
+            background-color: #d4edda;
+            border: 2px solid #28a745;
+            border-radius: 6px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .payment-success .icon {
+            font-size: 40px;
+            color: #28a745;
+            margin-bottom: 10px;
+        }
+        .payment-success h3 {
+            color: #155724;
+            margin: 0 0 10px 0;
+            font-size: 18px;
+        }
+        .payment-success p {
+            margin: 5px 0;
+            color: #155724;
+            font-weight: 500;
+        }
+        .payment-success .amount {
+            font-size: 28px;
+            font-weight: 700;
+            color: #155724;
+            margin: 10px 0;
+        }
+        .important-info {
+            background-color: #e7f3ff;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .important-info h4 {
+            color: #1976D2;
+            margin: 0 0 10px 0;
+            font-size: 15px;
+        }
+        .important-info ul {
+            margin: 10px 0;
+            padding-left: 20px;
+            color: #333;
+        }
+        .important-info li {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+        .footer {
+            background-color: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            border-top: 1px solid #dee2e6;
+        }
+        .footer p {
+            margin: 5px 0;
+            font-size: 13px;
+            color: #666;
+        }
+        .footer a {
+            color: #667eea;
+            text-decoration: none;
+        }
+        .button {
+            display: inline-block;
+            padding: 12px 30px;
+            background-color: #667eea;
+            color: white !important;
+            text-decoration: none;
+            border-radius: 6px;
+            margin: 15px 0;
+            font-weight: 600;
+        }
+        .appointment-id {
+            font-family: 'Courier New', monospace;
+            font-weight: 600;
+            color: #667eea;
+        }
+        @media only screen and (max-width: 600px) {
+            .info-row {
+                flex-direction: column;
+            }
+            .info-value {
+                text-align: left;
+                margin-top: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <h1>✓ Payment Successful</h1>
+            <p>Your appointment is confirmed</p>
+        </div>
+        
+        <div class="content">
+            <p class="greeting">Dear <strong th:text="${patientName}">Patient</strong>,</p>
+            
+            <div class="success-badge">
+                <div class="icon">✓</div>
+                <h2>Appointment Confirmed</h2>
+                <p>Your payment has been processed successfully</p>
+            </div>
+            
+            <p>Thank you for your payment. Your appointment has been confirmed and payment has been successfully processed through our secure payment gateway.</p>
+            
+            <div class="payment-success">
+                <div class="icon">💳</div>
+                <h3>Payment Confirmed</h3>
+                <p>Amount Paid:</p>
+                <div class="amount" th:text="${amount}">LKR 2,500.00</div>
+                <p style="font-size: 13px; margin-top: 10px;">Payment completed on <span th:text="${paymentDate}">January 15, 2024</span></p>
+            </div>
+            
+            <div class="info-section">
+                <h3>📅 Appointment Details</h3>
+                <div class="info-row">
+                    <span class="info-label">Appointment ID:</span>
+                    <span class="info-value appointment-id" th:text="${appointmentId}">APT123456</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Date:</span>
+                    <span class="info-value" th:text="${appointmentDate}">Monday, January 15, 2024</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Time:</span>
+                    <span class="info-value" th:text="${appointmentTime}">10:00 AM</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Purpose:</span>
+                    <span class="info-value" th:text="${purpose}">General Consultation</span>
+                </div>
+            </div>
+            
+            <div class="info-section">
+                <h3>👨‍⚕️ Doctor Information</h3>
+                <div class="info-row">
+                    <span class="info-label">Doctor:</span>
+                    <span class="info-value" th:text="${doctorName}">Dr. John Doe</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Specialization:</span>
+                    <span class="info-value" th:text="${doctorSpecialization}">General Medicine</span>
+                </div>
+            </div>
+            
+            <div class="info-section">
+                <h3>💳 Payment Information</h3>
+                <div class="info-row">
+                    <span class="info-label">Payment Method:</span>
+                    <span class="info-value">Card Payment</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Amount Paid:</span>
+                    <span class="info-value" th:text="${amount}">LKR 2,500.00</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Payment Date:</span>
+                    <span class="info-value" th:text="${paymentDate}">January 15, 2024</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Transaction ID:</span>
+                    <span class="info-value appointment-id" th:text="${transactionId}">TXN123456789</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Payment ID:</span>
+                    <span class="info-value appointment-id" th:text="${paymentId}">PAY123456</span>
+                </div>
+            </div>
+            
+            <div class="info-section">
+                <h3>🏥 Hospital Information</h3>
+                <div class="info-row">
+                    <span class="info-label">Hospital:</span>
+                    <span class="info-value" th:text="${hospitalName}">City Hospital</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Address:</span>
+                    <span class="info-value" th:text="${hospitalAddress}">123 Main Street</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">City:</span>
+                    <span class="info-value" th:text="${hospitalCity}">Colombo</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Phone:</span>
+                    <span class="info-value" th:text="${hospitalPhone}">+94 11 234 5678</span>
+                </div>
+            </div>
+            
+            <div class="important-info">
+                <h4>📋 Important Information</h4>
+                <ul>
+                    <li>Please arrive 15 minutes before your scheduled appointment time</li>
+                    <li>Bring your National Identity Card and any relevant medical records</li>
+                    <li>Your payment has been confirmed - no additional payment required at the hospital</li>
+                    <li>You can download your appointment confirmation from your account</li>
+                    <li>Keep this email and transaction ID for your records</li>
+                    <li>You can cancel within 6 hours of booking through our online system</li>
+                </ul>
+            </div>
+            
+            <div style="text-align: center;">
+                <a th:href="@{${baseUrl} + '/appointments/my-appointments'}" class="button">View My Appointments</a>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p><strong th:text="${hospitalName}">Hospital Name</strong></p>
+            <p th:text="${hospitalAddress} + ', ' + ${hospitalCity}">Hospital Address</p>
+            <p>Phone: <span th:text="${hospitalPhone}">Phone</span> | Email: <span th:text="${hospitalEmail}">Email</span></p>
+            <p style="margin-top: 15px; font-size: 12px;">
+                This is an automated message. Please do not reply to this email.<br/>
+                &copy; <span th:text="${currentYear}">2024</span> Healthcare System. All rights reserved.
+            </p>
+        </div>
+    </div>
+</body>
+</html>
