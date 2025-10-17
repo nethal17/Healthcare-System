@@ -21,11 +21,6 @@ public class AuthController {
     
     private final UserService userService;
     
-    @GetMapping("/")
-    public String home() {
-        return "redirect:/login";
-    }
-    
     @GetMapping("/register")
     public String showRegisterPage(Model model) {
         model.addAttribute("registerRequest", new RegisterRequest());
