@@ -295,4 +295,336 @@ public class PdfGenerationService {
         table.addCell(labelCell);
         table.addCell(valueCell);
     }
+
+    /**
+     * Generate insurance appointment confirmation PDF with comprehensive details
+     */
+    public byte[] generateInsuranceAppointmentPdf(
+            Appointment appointment,
+            Patient patient,
+            Doctor doctor,
+            Hospital hospital,
+            String insuranceProvider,
+            String policyNumber
+    ) {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+        try {
+            PdfWriter writer = new PdfWriter(baos);
+            PdfDocument pdfDoc = new PdfDocument(writer);
+            Document document = new Document(pdfDoc);
+            document.setMargins(30, 30, 30, 30);
+
+            // Color scheme
+            DeviceRgb primaryBlue = new DeviceRgb(30, 64, 175);
+            DeviceRgb accentGreen = new DeviceRgb(16, 185, 129);
+            DeviceRgb amberColor = new DeviceRgb(245, 158, 11);
+            DeviceRgb lightGray = new DeviceRgb(243, 244, 246);
+            DeviceRgb darkGray = new DeviceRgb(31, 41, 55);
+            DeviceRgb white = new DeviceRgb(255, 255, 255);
+
+            // ========== HEADER ==========
+            Paragraph mainHeader = new Paragraph("HEALTHCARE SYSTEM")
+                    .setFontSize(26)
+                    .setBold()
+                    .setFontColor(primaryBlue)
+                    .setTextAlignment(TextAlignment.CENTER)
+                    .setMarginBottom(3);
+            document.add(mainHeader);
+
+            Paragraph subHeader = new Paragraph("Smart Healthcare Management")
+                    .setFontSize(11)
+                    .setFontColor(primaryBlue)
+                    .setTextAlignment(TextAlignment.CENTER)
+                    .setMarginBottom(15);
+            document.add(subHeader);
+
+            // Horizontal line
+            Table headerLine = new Table(1).setWidth(UnitValue.createPercentValue(100));
+            headerLine.addCell(new Cell()
+                    .add(new Paragraph(""))
+                    .setHeight(3)
+                    .setBackgroundColor(primaryBlue)
+                    .setBorder(com.itextpdf.layout.borders.Border.NO_BORDER));
+            document.add(headerLine);
+
+            document.add(new Paragraph("\n"));
+
+            // ========== TITLE ==========
+            Paragraph title = new Paragraph("Appointment Confirmation with Insurance Claim")
+                    .setFontSize(18)
+                    .setBold()
+                    .setFontColor(darkGray)
+                    .setTextAlignment(TextAlignment.CENTER)
+                    .setMarginBottom(15);
+            document.add(title);
+
+            // ========== STATUS BADGE ==========
+            Table statusBadge = new Table(1).setWidth(UnitValue.createPercentValue(60))
+                    .setHorizontalAlignment(com.itextpdf.layout.properties.HorizontalAlignment.CENTER);
+            Cell statusCell = new Cell()
+                    .add(new Paragraph("⏳ INSURANCE CLAIM PENDING")
+                            .setFontSize(12)
+                            .setBold()
+                            .setFontColor(white)
+                            .setTextAlignment(TextAlignment.CENTER))
+                    .setBackgroundColor(amberColor)
+                    .setPadding(10)
+                    .setBorder(com.itextpdf.layout.borders.Border.NO_BORDER);
+            statusBadge.addCell(statusCell);
+            document.add(statusBadge);
+
+            document.add(new Paragraph("\n"));
+
+            // ========== PATIENT INFORMATION ==========
+            Paragraph patientTitle = new Paragraph("Patient Information")
+                    .setFontSize(14)
+                    .setBold()
+                    .setFontColor(primaryBlue)
+                    .setMarginBottom(8);
+            document.add(patientTitle);
+
+            Table patientTable = new Table(UnitValue.createPercentArray(new float[]{35f, 65f}))
+                    .setWidth(UnitValue.createPercentValue(100));
+            
+            addStyledTableRow(patientTable, "Patient ID:", patient.getId(), lightGray);
+            addStyledTableRow(patientTable, "Full Name:", patient.getName(), white);
+            addStyledTableRow(patientTable, "Date of Birth:", 
+                    patient.getDateOfBirth() != null ? patient.getDateOfBirth().toString() : "N/A", lightGray);
+            addStyledTableRow(patientTable, "Gender:", 
+                    patient.getGender() != null ? patient.getGender() : "N/A", white);
+            addStyledTableRow(patientTable, "Contact Number:", 
+                    patient.getContactNumber() != null ? patient.getContactNumber() : "N/A", lightGray);
+            addStyledTableRow(patientTable, "Email:", 
+                    patient.getEmail() != null ? patient.getEmail() : "N/A", white);
+            addStyledTableRow(patientTable, "Address:", 
+                    patient.getAddress() != null ? patient.getAddress() : "N/A", lightGray);
+            
+            document.add(patientTable);
+            document.add(new Paragraph("\n"));
+
+            // ========== HOSPITAL INFORMATION ==========
+            Paragraph hospitalTitle = new Paragraph("Hospital Information")
+                    .setFontSize(14)
+                    .setBold()
+                    .setFontColor(primaryBlue)
+                    .setMarginBottom(8);
+            document.add(hospitalTitle);
+
+            if (hospital != null) {
+                Table hospitalTable = new Table(UnitValue.createPercentArray(new float[]{35f, 65f}))
+                        .setWidth(UnitValue.createPercentValue(100));
+                
+                addStyledTableRow(hospitalTable, "Hospital Name:", hospital.getName(), lightGray);
+                addStyledTableRow(hospitalTable, "Address:", 
+                        hospital.getLocation() != null && hospital.getLocation().getAddress() != null ? 
+                                hospital.getLocation().getAddress() : "N/A", white);
+                addStyledTableRow(hospitalTable, "Contact:", 
+                        hospital.getContactInfo() != null && hospital.getContactInfo().getPhoneNumber() != null ? 
+                                hospital.getContactInfo().getPhoneNumber() : "N/A", lightGray);
+                addStyledTableRow(hospitalTable, "Type:", 
+                        hospital.getType() != null ? hospital.getType().toString() : "N/A", white);
+                
+                document.add(hospitalTable);
+            } else {
+                document.add(new Paragraph("Hospital information not available").setItalic().setFontSize(10));
+            }
+            
+            document.add(new Paragraph("\n"));
+
+            // ========== DOCTOR INFORMATION ==========
+            Paragraph doctorTitle = new Paragraph("Doctor Information")
+                    .setFontSize(14)
+                    .setBold()
+                    .setFontColor(primaryBlue)
+                    .setMarginBottom(8);
+            document.add(doctorTitle);
+
+            if (doctor != null) {
+                Table doctorTable = new Table(UnitValue.createPercentArray(new float[]{35f, 65f}))
+                        .setWidth(UnitValue.createPercentValue(100));
+                
+                addStyledTableRow(doctorTable, "Doctor Name:", "Dr. " + doctor.getName(), lightGray);
+                addStyledTableRow(doctorTable, "Specialization:", 
+                        doctor.getSpecialization() != null ? doctor.getSpecialization() : "N/A", white);
+                addStyledTableRow(doctorTable, "Contact:", 
+                        doctor.getContactNumber() != null ? doctor.getContactNumber() : "N/A", lightGray);
+                
+                document.add(doctorTable);
+            } else {
+                document.add(new Paragraph("Doctor information not available").setItalic().setFontSize(10));
+            }
+            
+            document.add(new Paragraph("\n"));
+
+            // ========== APPOINTMENT DETAILS ==========
+            Paragraph appointmentTitle = new Paragraph("Appointment Details")
+                    .setFontSize(14)
+                    .setBold()
+                    .setFontColor(primaryBlue)
+                    .setMarginBottom(8);
+            document.add(appointmentTitle);
+
+            Table appointmentTable = new Table(UnitValue.createPercentArray(new float[]{35f, 65f}))
+                    .setWidth(UnitValue.createPercentValue(100));
+            
+            DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("MMMM dd, yyyy");
+            DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("h:mm a");
+
+            addStyledTableRow(appointmentTable, "Appointment ID:", appointment.getId(), lightGray);
+            addStyledTableRow(appointmentTable, "Date:", 
+                    appointment.getAppointmentDateTime() != null ? 
+                            appointment.getAppointmentDateTime().format(dateFormatter) : "N/A", white);
+            addStyledTableRow(appointmentTable, "Time:", 
+                    appointment.getAppointmentDateTime() != null ? 
+                            appointment.getAppointmentDateTime().format(timeFormatter) : "N/A", lightGray);
+            addStyledTableRow(appointmentTable, "Status:", 
+                    appointment.getStatus() != null ? appointment.getStatus().toString() : "SCHEDULED", white);
+            addStyledTableRow(appointmentTable, "Purpose:", 
+                    appointment.getPurpose() != null ? appointment.getPurpose() : "General Consultation", lightGray);
+            
+            document.add(appointmentTable);
+            document.add(new Paragraph("\n"));
+
+            // ========== INSURANCE INFORMATION ==========
+            Paragraph insuranceTitle = new Paragraph("Insurance Information")
+                    .setFontSize(14)
+                    .setBold()
+                    .setFontColor(primaryBlue)
+                    .setMarginBottom(8);
+            document.add(insuranceTitle);
+
+            Table insuranceTable = new Table(UnitValue.createPercentArray(new float[]{35f, 65f}))
+                    .setWidth(UnitValue.createPercentValue(100))
+                    .setBackgroundColor(new DeviceRgb(243, 232, 255)); // Light purple highlight
+            
+            Cell insuranceLabel1 = new Cell()
+                    .add(new Paragraph("Insurance Provider:").setFontSize(10).setBold())
+                    .setPadding(10);
+            Cell insuranceValue1 = new Cell()
+                    .add(new Paragraph(insuranceProvider != null ? insuranceProvider : "N/A").setFontSize(10))
+                    .setPadding(10);
+            insuranceTable.addCell(insuranceLabel1);
+            insuranceTable.addCell(insuranceValue1);
+
+            Cell insuranceLabel2 = new Cell()
+                    .add(new Paragraph("Policy Number:").setFontSize(10).setBold())
+                    .setPadding(10);
+            Cell insuranceValue2 = new Cell()
+                    .add(new Paragraph(policyNumber != null ? policyNumber : "N/A").setFontSize(10))
+                    .setPadding(10);
+            insuranceTable.addCell(insuranceLabel2);
+            insuranceTable.addCell(insuranceValue2);
+
+            Cell insuranceLabel3 = new Cell()
+                    .add(new Paragraph("Claim Status:").setFontSize(10).setBold())
+                    .setPadding(10);
+            Cell insuranceValue3 = new Cell()
+                    .add(new Paragraph("PENDING VERIFICATION").setFontSize(10).setBold().setFontColor(amberColor))
+                    .setPadding(10);
+            insuranceTable.addCell(insuranceLabel3);
+            insuranceTable.addCell(insuranceValue3);
+            
+            document.add(insuranceTable);
+            document.add(new Paragraph("\n"));
+
+            // ========== CONFIRMATION MESSAGE ==========
+            Table confirmBox = new Table(1).setWidth(UnitValue.createPercentValue(100));
+            Cell confirmCell = new Cell()
+                    .add(new Paragraph("✓ APPOINTMENT CONFIRMED")
+                            .setFontSize(14)
+                            .setBold()
+                            .setFontColor(white)
+                            .setTextAlignment(TextAlignment.CENTER)
+                            .setMarginBottom(5))
+                    .add(new Paragraph("Your appointment has been successfully booked. Your insurance claim is currently under review and you will be contacted if additional information is needed.")
+                            .setFontSize(10)
+                            .setFontColor(white)
+                            .setTextAlignment(TextAlignment.CENTER))
+                    .setBackgroundColor(accentGreen)
+                    .setPadding(15)
+                    .setBorder(com.itextpdf.layout.borders.Border.NO_BORDER);
+            confirmBox.addCell(confirmCell);
+            document.add(confirmBox);
+
+            document.add(new Paragraph("\n"));
+
+            // ========== IMPORTANT INSTRUCTIONS ==========
+            Paragraph instructionTitle = new Paragraph("Important Instructions")
+                    .setFontSize(12)
+                    .setBold()
+                    .setFontColor(primaryBlue)
+                    .setMarginBottom(8);
+            document.add(instructionTitle);
+
+            Table instructionBox = new Table(1).setWidth(UnitValue.createPercentValue(100));
+            Cell instructionCell = new Cell()
+                    .add(new Paragraph("• Please arrive 15 minutes before your scheduled appointment time.")
+                            .setFontSize(9)
+                            .setMarginBottom(4))
+                    .add(new Paragraph("• Bring a valid photo ID and your insurance card.")
+                            .setFontSize(9)
+                            .setMarginBottom(4))
+                    .add(new Paragraph("• Your insurance claim is being verified. You will be contacted if additional information is needed.")
+                            .setFontSize(9)
+                            .setMarginBottom(4))
+                    .add(new Paragraph("• If you need to reschedule or cancel, please contact us at least 24 hours in advance.")
+                            .setFontSize(9)
+                            .setMarginBottom(4))
+                    .add(new Paragraph("• Keep this document for your records and bring it to your appointment.")
+                            .setFontSize(9))
+                    .setBackgroundColor(lightGray)
+                    .setPadding(12)
+                    .setBorder(new com.itextpdf.layout.borders.SolidBorder(primaryBlue, 1));
+            instructionBox.addCell(instructionCell);
+            document.add(instructionBox);
+
+            document.add(new Paragraph("\n\n"));
+
+            // ========== FOOTER ==========
+            Table footerLine = new Table(1).setWidth(UnitValue.createPercentValue(100));
+            footerLine.addCell(new Cell()
+                    .add(new Paragraph(""))
+                    .setHeight(1)
+                    .setBackgroundColor(lightGray)
+                    .setBorder(com.itextpdf.layout.borders.Border.NO_BORDER));
+            document.add(footerLine);
+
+            Paragraph footer = new Paragraph(
+                    "Healthcare System - Smart Healthcare Management\n" +
+                    "For inquiries: support@healthcare.com | Phone: 1-800-HEALTH-CARE\n" +
+                    "This is a computer-generated document and does not require a signature.")
+                    .setFontSize(8)
+                    .setFontColor(new DeviceRgb(107, 114, 128))
+                    .setTextAlignment(TextAlignment.CENTER)
+                    .setMarginTop(10);
+            document.add(footer);
+
+            document.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return baos.toByteArray();
+    }
+
+    /**
+     * Helper method to add styled table rows with alternating colors
+     */
+    private void addStyledTableRow(Table table, String label, String value, DeviceRgb backgroundColor) {
+        Cell labelCell = new Cell()
+                .add(new Paragraph(label).setFontSize(10).setBold())
+                .setBackgroundColor(backgroundColor)
+                .setPadding(8)
+                .setBorder(new com.itextpdf.layout.borders.SolidBorder(new DeviceRgb(229, 231, 235), 0.5f));
+
+        Cell valueCell = new Cell()
+                .add(new Paragraph(value != null ? value : "N/A").setFontSize(10))
+                .setBackgroundColor(backgroundColor)
+                .setPadding(8)
+                .setBorder(new com.itextpdf.layout.borders.SolidBorder(new DeviceRgb(229, 231, 235), 0.5f));
+
+        table.addCell(labelCell);
+        table.addCell(valueCell);
+    }
 }

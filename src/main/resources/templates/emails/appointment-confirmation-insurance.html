@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Appointment Confirmation - Insurance Claim</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .email-container {
+            background-color: #ffffff;
+            margin: 20px auto;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 600;
+        }
+        .header p {
+            margin: 10px 0 0 0;
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        .content {
+            padding: 30px 20px;
+        }
+        .greeting {
+            font-size: 18px;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .success-badge {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+        .success-badge .icon {
+            font-size: 48px;
+            color: #28a745;
+            margin-bottom: 10px;
+        }
+        .success-badge h2 {
+            color: #155724;
+            margin: 0 0 5px 0;
+            font-size: 20px;
+        }
+        .success-badge p {
+            color: #155724;
+            margin: 0;
+            font-size: 14px;
+        }
+        .info-section {
+            background-color: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+        .info-section h3 {
+            color: #667eea;
+            margin: 0 0 15px 0;
+            font-size: 16px;
+            font-weight: 600;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #dee2e6;
+        }
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        .info-label {
+            font-weight: 600;
+            color: #666;
+            flex: 1;
+        }
+        .info-value {
+            color: #333;
+            flex: 2;
+            text-align: right;
+        }
+        .insurance-notice {
+            background-color: #d1ecf1;
+            border: 2px solid #17a2b8;
+            border-radius: 6px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .insurance-notice .icon {
+            font-size: 40px;
+            color: #0c5460;
+            margin-bottom: 10px;
+        }
+        .insurance-notice h3 {
+            color: #0c5460;
+            margin: 0 0 10px 0;
+            font-size: 18px;
+        }
+        .insurance-notice p {
+            margin: 5px 0;
+            color: #0c5460;
+            font-weight: 500;
+        }
+        .insurance-notice .amount {
+            font-size: 28px;
+            font-weight: 700;
+            color: #0c5460;
+            margin: 10px 0;
+        }
+        .important-info {
+            background-color: #e7f3ff;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .important-info h4 {
+            color: #1976D2;
+            margin: 0 0 10px 0;
+            font-size: 15px;
+        }
+        .important-info ul {
+            margin: 10px 0;
+            padding-left: 20px;
+            color: #333;
+        }
+        .important-info li {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+        .warning-info {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .warning-info h4 {
+            color: #856404;
+            margin: 0 0 10px 0;
+            font-size: 15px;
+        }
+        .warning-info p {
+            margin: 5px 0;
+            color: #856404;
+        }
+        .footer {
+            background-color: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            border-top: 1px solid #dee2e6;
+        }
+        .footer p {
+            margin: 5px 0;
+            font-size: 13px;
+            color: #666;
+        }
+        .footer a {
+            color: #667eea;
+            text-decoration: none;
+        }
+        .button {
+            display: inline-block;
+            padding: 12px 30px;
+            background-color: #667eea;
+            color: white !important;
+            text-decoration: none;
+            border-radius: 6px;
+            margin: 15px 0;
+            font-weight: 600;
+        }
+        .appointment-id {
+            font-family: 'Courier New', monospace;
+            font-weight: 600;
+            color: #667eea;
+        }
+        @media only screen and (max-width: 600px) {
+            .info-row {
+                flex-direction: column;
+            }
+            .info-value {
+                text-align: left;
+                margin-top: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <h1>✓ Appointment Confirmed</h1>
+            <p>Insurance claim submitted for processing</p>
+        </div>
+        
+        <div class="content">
+            <p class="greeting">Dear <strong th:text="${patientName}">Patient</strong>,</p>
+            
+            <div class="success-badge">
+                <div class="icon">✓</div>
+                <h2>Appointment Confirmed</h2>
+                <p>Insurance claim has been submitted</p>
+            </div>
+            
+            <p>Your appointment has been successfully scheduled. Your insurance claim has been submitted to your insurance provider for processing.</p>
+            
+            <div class="insurance-notice">
+                <div class="icon">🛡️</div>
+                <h3>Insurance Claim Submitted</h3>
+                <p>Claim Amount:</p>
+                <div class="amount" th:text="${amount}">LKR 2,500.00</div>
+                <p style="font-size: 13px; margin-top: 10px;">Your insurance claim is being processed by <strong th:text="${insuranceProvider}">Insurance Provider</strong></p>
+            </div>
+            
+            <div class="warning-info">
+                <h4>⚠️ Payment Notice</h4>
+                <p>Please note that if your insurance claim is not approved or only partially approved, you may be required to pay the balance amount at the hospital. We recommend bringing sufficient payment method as a backup.</p>
+            </div>
+            
+            <div class="info-section">
+                <h3>📅 Appointment Details</h3>
+                <div class="info-row">
+                    <span class="info-label">Appointment ID:</span>
+                    <span class="info-value appointment-id" th:text="${appointmentId}">APT123456</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Date:</span>
+                    <span class="info-value" th:text="${appointmentDate}">Monday, January 15, 2024</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Time:</span>
+                    <span class="info-value" th:text="${appointmentTime}">10:00 AM</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Purpose:</span>
+                    <span class="info-value" th:text="${purpose}">General Consultation</span>
+                </div>
+            </div>
+            
+            <div class="info-section">
+                <h3>👨‍⚕️ Doctor Information</h3>
+                <div class="info-row">
+                    <span class="info-label">Doctor:</span>
+                    <span class="info-value" th:text="${doctorName}">Dr. John Doe</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Specialization:</span>
+                    <span class="info-value" th:text="${doctorSpecialization}">General Medicine</span>
+                </div>
+            </div>
+            
+            <div class="info-section">
+                <h3>🛡️ Insurance Information</h3>
+                <div class="info-row">
+                    <span class="info-label">Insurance Provider:</span>
+                    <span class="info-value" th:text="${insuranceProvider}">ABC Insurance</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Policy Number:</span>
+                    <span class="info-value appointment-id" th:text="${policyNumber}">POL123456789</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Claim Amount:</span>
+                    <span class="info-value" th:text="${amount}">LKR 2,500.00</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Claim Status:</span>
+                    <span class="info-value">Pending Review</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Payment ID:</span>
+                    <span class="info-value appointment-id" th:text="${paymentId}">PAY123456</span>
+                </div>
+            </div>
+            
+            <div class="info-section">
+                <h3>🏥 Hospital Information</h3>
+                <div class="info-row">
+                    <span class="info-label">Hospital:</span>
+                    <span class="info-value" th:text="${hospitalName}">City Hospital</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Address:</span>
+                    <span class="info-value" th:text="${hospitalAddress}">123 Main Street</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">City:</span>
+                    <span class="info-value" th:text="${hospitalCity}">Colombo</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Phone:</span>
+                    <span class="info-value" th:text="${hospitalPhone}">+94 11 234 5678</span>
+                </div>
+            </div>
+            
+            <div class="important-info">
+                <h4>📋 Important Information</h4>
+                <ul>
+                    <li>Please arrive 15 minutes before your scheduled appointment time</li>
+                    <li>Bring your National Identity Card and insurance card</li>
+                    <li>Bring your insurance policy documents</li>
+                    <li>Your claim is currently being processed by your insurance provider</li>
+                    <li>The hospital will verify your insurance coverage upon arrival</li>
+                    <li>Be prepared to pay if the insurance claim is denied or partially approved</li>
+                    <li>You will receive updates on your insurance claim status</li>
+                    <li>You can cancel within 6 hours of booking through our online system</li>
+                </ul>
+            </div>
+            
+            <div style="text-align: center;">
+                <a th:href="@{${baseUrl} + '/appointments/my-appointments'}" class="button">View My Appointments</a>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p><strong th:text="${hospitalName}">Hospital Name</strong></p>
+            <p th:text="${hospitalAddress} + ', ' + ${hospitalCity}">Hospital Address</p>
+            <p>Phone: <span th:text="${hospitalPhone}">Phone</span> | Email: <span th:text="${hospitalEmail}">Email</span></p>
+            <p style="margin-top: 15px; font-size: 12px;">
+                This is an automated message. Please do not reply to this email.<br/>
+                &copy; <span th:text="${currentYear}">2024</span> Healthcare System. All rights reserved.
+            </p>
+        </div>
+    </div>
+</body>
+</html>
