@@ -14,8 +14,10 @@ import com.example.health_care_system.service.AppointmentService;
 import com.example.health_care_system.service.PaymentService;
 import com.example.health_care_system.service.PdfGenerationService;
 import com.example.health_care_system.service.EmailService;
+import com.example.health_care_system.strategy.PaymentContext;
 import jakarta.servlet.http.HttpSession;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -33,33 +35,19 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
 
+@Slf4j
 @Controller
-
+@RequiredArgsConstructor
 public class PaymentController {
 
-    @Autowired
-    private AppointmentService appointmentService;
-    
-    @Autowired
-    private AppointmentRepository appointmentRepository;
-    
-    @Autowired
-    private PatientRepository patientRepository;
-    
-    @Autowired
-    private DoctorRepository doctorRepository;
-    
-    @Autowired
-    private HospitalRepository hospitalRepository;
-    
-    @Autowired
-    private PaymentService paymentService;
-
-    @Autowired
-    private PdfGenerationService pdfGenerationService;
-    
-    @Autowired
-    private EmailService emailService;
+    private final AppointmentService appointmentService;
+    private final AppointmentRepository appointmentRepository;
+    private final PatientRepository patientRepository;
+    private final DoctorRepository doctorRepository;
+    private final HospitalRepository hospitalRepository;
+    private final PaymentService paymentService;
+    private final PdfGenerationService pdfGenerationService;
+    private final EmailService emailService;
 
     @GetMapping("/payment")
     public String index(){
@@ -158,21 +146,33 @@ public class PaymentController {
             if (doctor != null) {
                 Hospital hospital = hospitalRepository.findById(doctor.getHospitalId()).orElse(null);
                 if (hospital != null && hospital.getHospitalCharges() != null) {
-                    // Create payment record for insurance
-                    Payment payment = paymentService.createInsurancePayment(
-                        appointment.getId(),
-                        hospital.getHospitalCharges(),
-                        insuranceProvider,
-                        policyNumber
+                    // Create payment context with insurance information
+                    PaymentContext paymentContext = PaymentContext.builder()
+                            .insuranceProvider(insuranceProvider)
+                            .policyNumber(policyNumber)
+                            .notes("Insurance claim for appointment " + appointment.getId())
+                            .build();
+                    
+                    // Create payment record using Strategy Pattern
+                    Payment payment = paymentService.createPayment(
+                            appointment.getId(),
+                            Payment.PaymentMethod.INSURANCE,
+                            hospital.getHospitalCharges(),
+                            paymentContext
                     );
+                    
+                    log.info("Insurance payment created with ID: {} for appointment: {}", 
+                            payment.getId(), appointment.getId());
+                    
                     session.setAttribute("paymentId", payment.getId());
                     
                     // Send confirmation email for insurance payment
                     try {
                         emailService.sendInsuranceAppointmentConfirmation(patient, appointment, doctor, hospital, payment);
+                        log.info("Insurance confirmation email sent to patient: {}", patient.getEmail());
                     } catch (Exception e) {
-                        // Log email error but don't fail the appointment
-                        System.err.println("Failed to send confirmation email: " + e.getMessage());
+                        log.error("Failed to send confirmation email for appointment {}: {}", 
+                                appointment.getId(), e.getMessage(), e);
                     }
                 }
             }

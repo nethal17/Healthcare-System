@@ -7,7 +7,8 @@ import com.example.health_care_system.model.UserRole;
 import com.example.health_care_system.repository.AppointmentRepository;
 import com.example.health_care_system.repository.DoctorRepository;
 import jakarta.servlet.http.HttpSession;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -20,15 +21,14 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Controller
 @RequestMapping("/staff/check-in")
+@RequiredArgsConstructor
 public class StaffCheckInController {
 
-    @Autowired
-    private AppointmentRepository appointmentRepository;
-    
-    @Autowired
-    private DoctorRepository doctorRepository;
+    private final AppointmentRepository appointmentRepository;
+    private final DoctorRepository doctorRepository;
 
     /**
      * View today's appointments for check-in (filtered by staff's hospital)
@@ -39,9 +39,12 @@ public class StaffCheckInController {
             HttpSession session,
             Model model) {
         
+        log.debug("Viewing check-in appointments with filter: {}", filter);
+        
         // Check if user is staff or admin
         UserDTO user = (UserDTO) session.getAttribute("user");
         if (user == null || (user.getRole() != UserRole.STAFF && user.getRole() != UserRole.ADMIN)) {
+            log.warn("Unauthorized access attempt to check-in page");
             return "redirect:/login";
         }
         
@@ -59,6 +62,8 @@ public class StaffCheckInController {
                 .sorted(Comparator.comparing(Appointment::getAppointmentDateTime))
                 .collect(Collectors.toList());
         
+        log.debug("Found {} appointments for today", todaysAppointments.size());
+        
         // Filter by hospital if staff member has a hospitalId (Admins see all)
         if (user.getRole() == UserRole.STAFF && user.getHospitalId() != null && !user.getHospitalId().isEmpty()) {
             todaysAppointments = todaysAppointments.stream()
@@ -72,6 +77,7 @@ public class StaffCheckInController {
                         return false;
                     })
                     .collect(Collectors.toList());
+            log.debug("Filtered to {} appointments for hospital: {}", todaysAppointments.size(), user.getHospitalId());
         }
         
         // Apply filter if needed

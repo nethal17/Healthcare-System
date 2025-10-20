@@ -252,7 +252,7 @@ public class PdfGenerationService {
      * Add a row to a table with alternating background colors
      */
     private void addTableRow(Table table, String label, String value, DeviceRgb backgroundColor) {
-        addTableRow(table, label, value, backgroundColor, false);
+                addTableRow(table, label, value, backgroundColor, false);
     }
     
     /**
@@ -263,8 +263,10 @@ public class PdfGenerationService {
             .add(new Paragraph(label).setFontSize(10).setBold())
             .setBackgroundColor(backgroundColor)
             .setPadding(8);
-        
-        Paragraph valueParagraph = new Paragraph(value).setFontSize(10);
+                if (value == null) {
+                        value = "N/A";
+                }
+                Paragraph valueParagraph = new Paragraph(value).setFontSize(10);
         if (bold) {
             valueParagraph.setBold();
         }
@@ -286,11 +288,13 @@ public class PdfGenerationService {
             .add(new Paragraph(label).setFontSize(10).setBold())
             .setBackgroundColor(backgroundColor)
             .setPadding(8);
-        
-        Cell valueCell = new Cell()
-            .add(new Paragraph(value).setFontSize(10))
-            .setBackgroundColor(backgroundColor)
-            .setPadding(8);
+                if (value == null) {
+                        value = "N/A";
+                }
+                Cell valueCell = new Cell()
+                        .add(new Paragraph(value).setFontSize(10))
+                        .setBackgroundColor(backgroundColor)
+                        .setPadding(8);
         
         table.addCell(labelCell);
         table.addCell(valueCell);

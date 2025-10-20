@@ -12,12 +12,14 @@ import com.example.health_care_system.service.PaymentService;
 import com.example.health_care_system.service.PdfGenerationService;
 import com.example.health_care_system.service.TimeSlotReservationService;
 import com.example.health_care_system.service.EmailService;
+import com.example.health_care_system.strategy.PaymentContext;
 import com.example.health_care_system.repository.AppointmentRepository;
 import com.example.health_care_system.repository.HospitalRepository;
 import com.example.health_care_system.repository.DoctorRepository;
 import com.example.health_care_system.repository.PatientRepository;
 import jakarta.servlet.http.HttpSession;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -38,36 +40,21 @@ import java.util.Comparator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+@Slf4j
 @Controller
 @RequestMapping("/appointments")
+@RequiredArgsConstructor
 public class AppointmentController {
     
-    @Autowired
-    private AppointmentService appointmentService;
-    
-    @Autowired
-    private AppointmentRepository appointmentRepository;
-    
-    @Autowired
-    private HospitalRepository hospitalRepository;
-    
-    @Autowired
-    private DoctorRepository doctorRepository;
-    
-    @Autowired
-    private PatientRepository patientRepository;
-    
-    @Autowired
-    private PaymentService paymentService;
-    
-    @Autowired
-    private PdfGenerationService pdfGenerationService;
-    
-    @Autowired
-    private TimeSlotReservationService reservationService;
-    
-    @Autowired
-    private EmailService emailService;
+    private final AppointmentService appointmentService;
+    private final AppointmentRepository appointmentRepository;
+    private final HospitalRepository hospitalRepository;
+    private final DoctorRepository doctorRepository;
+    private final PatientRepository patientRepository;
+    private final PaymentService paymentService;
+    private final PdfGenerationService pdfGenerationService;
+    private final TimeSlotReservationService reservationService;
+    private final EmailService emailService;
     
     /**
      * Step 1: Show all hospitals to select from
@@ -447,10 +434,19 @@ public class AppointmentController {
                 if (hospital != null && hospital.getHospitalCharges() != null) {
                     // Create payment record for cash payment
                     if ("CASH".equals(paymentMethod)) {
-                        Payment payment = paymentService.createCashPayment(
-                            appointment.getId(),
-                            hospital.getHospitalCharges()
+                        // Create payment context for cash payment
+                        PaymentContext paymentContext = PaymentContext.builder()
+                                .notes("Cash payment for appointment " + appointment.getId())
+                                .build();
+                        
+                        // Create payment using Strategy Pattern
+                        Payment payment = paymentService.createPayment(
+                                appointment.getId(),
+                                Payment.PaymentMethod.CASH,
+                                hospital.getHospitalCharges(),
+                                paymentContext
                         );
+                        
                         session.setAttribute("paymentId", payment.getId());
                         
                         // Send confirmation email for cash payment
@@ -597,11 +593,18 @@ public class AppointmentController {
                 return "redirect:/dashboard";
             }
             
-            // Create payment record in database
-            Payment payment = paymentService.createCardPayment(
-                appointmentId,
-                sessionId,  // Stripe session ID as transaction ID
-                hospital.getHospitalCharges()
+            // Create payment context with transaction ID
+            PaymentContext paymentContext = PaymentContext.builder()
+                    .transactionId(sessionId)  // Stripe session ID as transaction ID
+                    .notes("Card payment for appointment " + appointmentId)
+                    .build();
+            
+            // Create payment record using Strategy Pattern
+            Payment payment = paymentService.createPayment(
+                    appointmentId,
+                    Payment.PaymentMethod.CARD,
+                    hospital.getHospitalCharges(),
+                    paymentContext
             );
             
             // Send confirmation email for card payment

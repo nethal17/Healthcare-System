@@ -5,7 +5,8 @@ import com.example.health_care_system.model.*;
 import com.example.health_care_system.repository.*;
 import com.example.health_care_system.service.AnalyticsPdfService;
 import jakarta.servlet.http.HttpSession;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -24,18 +25,15 @@ import java.time.format.TextStyle;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Controller
 @RequestMapping("/admin/analytics")
+@RequiredArgsConstructor
 public class AdminAnalyticsController {
 
-    @Autowired
-    private AppointmentRepository appointmentRepository;
-    
-    @Autowired
-    private DoctorRepository doctorRepository;
-    
-    @Autowired
-    private AnalyticsPdfService analyticsPdfService;
+    private final AppointmentRepository appointmentRepository;
+    private final DoctorRepository doctorRepository;
+    private final AnalyticsPdfService analyticsPdfService;
 
     /**
      * Main analytics dashboard
@@ -47,9 +45,12 @@ public class AdminAnalyticsController {
             HttpSession session,
             Model model) {
         
+        log.debug("Viewing analytics dashboard for date range: {} to {}", startDate, endDate);
+        
         // Check if user is admin
         UserDTO user = (UserDTO) session.getAttribute("user");
         if (user == null || user.getRole() != UserRole.ADMIN) {
+            log.warn("Unauthorized access attempt to analytics dashboard");
             return "redirect:/login";
         }
         
@@ -61,6 +62,8 @@ public class AdminAnalyticsController {
             endDate = LocalDate.now();
         }
         
+        log.info("Generating analytics for admin {} from {} to {}", user.getName(), startDate, endDate);
+        
         LocalDateTime startDateTime = startDate.atStartOfDay();
         LocalDateTime endDateTime = endDate.atTime(LocalTime.MAX);
         
@@ -70,6 +73,8 @@ public class AdminAnalyticsController {
                 .filter(a -> !a.getAppointmentDateTime().isBefore(startDateTime) && 
                            !a.getAppointmentDateTime().isAfter(endDateTime))
                 .collect(Collectors.toList());
+        
+        log.debug("Found {} appointments in date range", appointments.size());
         
         // 1. Most booked time slots
         Map<String, Long> timeSlotData = getTimeSlotAnalysis(appointments);
@@ -98,13 +103,16 @@ public class AdminAnalyticsController {
         // Summary statistics
         int totalAppointments = appointments.size();
         int scheduledCount = (int) appointments.stream()
-                .filter(a -> a.getStatus() == Appointment.AppointmentStatus.SCHEDULED)
+                .filter(a -> a.getStatus() != null && a.getStatus() == Appointment.AppointmentStatus.SCHEDULED)
                 .count();
         int completedCount = (int) appointments.stream()
-                .filter(a -> a.getStatus() == Appointment.AppointmentStatus.COMPLETED)
+                .filter(a -> a.getStatus() != null && a.getStatus() == Appointment.AppointmentStatus.COMPLETED)
                 .count();
         int cancelledCount = (int) appointments.stream()
-                .filter(a -> a.getStatus() == Appointment.AppointmentStatus.CANCELLED)
+                .filter(a -> a.getStatus() != null && a.getStatus() == Appointment.AppointmentStatus.CANCELLED)
+                .count();
+        int noShowCount = (int) appointments.stream()
+                .filter(a -> a.getStatus() != null && a.getStatus() == Appointment.AppointmentStatus.NO_SHOW)
                 .count();
         
         // Calculate rates
@@ -130,6 +138,7 @@ public class AdminAnalyticsController {
         model.addAttribute("scheduledCount", scheduledCount);
         model.addAttribute("completedCount", completedCount);
         model.addAttribute("cancelledCount", cancelledCount);
+        model.addAttribute("noShowCount", noShowCount);
         model.addAttribute("completionRate", String.format("%.1f", completionRate));
         model.addAttribute("cancellationRate", String.format("%.1f", cancellationRate));
         model.addAttribute("uniqueDoctors", uniqueDoctors);
@@ -376,14 +385,15 @@ public class AdminAnalyticsController {
             // Summary statistics
             int totalAppointments = appointments.size();
             int scheduledCount = (int) appointments.stream()
-                    .filter(a -> a.getStatus() == Appointment.AppointmentStatus.SCHEDULED)
+                    .filter(a -> a.getStatus() != null && a.getStatus() == Appointment.AppointmentStatus.SCHEDULED)
                     .count();
             int completedCount = (int) appointments.stream()
-                    .filter(a -> a.getStatus() == Appointment.AppointmentStatus.COMPLETED)
+                    .filter(a -> a.getStatus() != null && a.getStatus() == Appointment.AppointmentStatus.COMPLETED)
                     .count();
             int cancelledCount = (int) appointments.stream()
-                    .filter(a -> a.getStatus() == Appointment.AppointmentStatus.CANCELLED)
+                    .filter(a -> a.getStatus() != null && a.getStatus() == Appointment.AppointmentStatus.CANCELLED)
                     .count();
+            // Note: NO_SHOW count is included in statusData map which is passed to PDF
             
             double completionRate = totalAppointments > 0 ? (completedCount * 100.0 / totalAppointments) : 0;
             

@@ -20,6 +20,8 @@ public class Patient extends User {
     
     private LocalDate dateOfBirth;
     
+    private String bloodType;
+    
     private String address;
     
     private boolean active = true;

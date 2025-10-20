@@ -174,7 +174,7 @@
                 <i class="fas fa-table text-gray-700 mr-2"></i>
                 Detailed Statistics
             </h3>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div class="border-l-4 border-blue-500 pl-4">
                     <p class="text-sm text-gray-600">Scheduled</p>
                     <p class="text-2xl font-bold text-gray-800" th:text="${scheduledCount}">0</p>
@@ -186,6 +186,10 @@
                 <div class="border-l-4 border-red-500 pl-4">
                     <p class="text-sm text-gray-600">Cancelled</p>
                     <p class="text-2xl font-bold text-gray-800" th:text="${cancelledCount}">0</p>
+                </div>
+                <div class="border-l-4 border-amber-500 pl-4">
+                    <p class="text-sm text-gray-600">No Show</p>
+                    <p class="text-2xl font-bold text-gray-800" th:text="${noShowCount}">0</p>
                 </div>
             </div>
         </div>

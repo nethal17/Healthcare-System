@@ -1,5 +1,7 @@
 package com.example.health_care_system.service;
 
+import com.example.health_care_system.builder.EmailTemplateBuilder;
+import com.example.health_care_system.exception.EmailSendException;
 import com.example.health_care_system.model.Appointment;
 import com.example.health_care_system.model.Doctor;
 import com.example.health_care_system.model.Hospital;
@@ -7,7 +9,8 @@ import com.example.health_care_system.model.Patient;
 import com.example.health_care_system.model.Payment;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -15,27 +18,22 @@ import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-
+/**
+ * Service for sending email notifications.
+ * Uses EmailTemplateBuilder to eliminate code duplication.
+ * Follows SOLID principles with constructor injection.
+ */
+@Slf4j
 @Service
+@RequiredArgsConstructor
 public class EmailService {
     
-    @Autowired
-    private JavaMailSender mailSender;
-    
-    @Autowired
-    private TemplateEngine templateEngine;
+    private final JavaMailSender mailSender;
+    private final TemplateEngine templateEngine;
+    private final EmailTemplateBuilder emailTemplateBuilder;
     
     @Value("${spring.mail.username}")
     private String fromEmail;
-    
-    @Value("${app.base.url}")
-    private String baseUrl;
-    
-    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("EEEE, MMMM dd, yyyy");
-    private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("hh:mm a");
     
     /**
      * Send appointment confirmation email for government hospital (free service)
@@ -44,32 +42,35 @@ public class EmailService {
             Patient patient,
             Appointment appointment,
             Doctor doctor,
-            Hospital hospital) throws MessagingException {
+            Hospital hospital) {
         
-        Context context = new Context();
-        context.setVariable("patientName", patient.getName());
-        context.setVariable("appointmentId", appointment.getId());
-        context.setVariable("appointmentDate", appointment.getAppointmentDateTime().format(DATE_FORMATTER));
-        context.setVariable("appointmentTime", appointment.getAppointmentDateTime().format(TIME_FORMATTER));
-        context.setVariable("doctorName", doctor.getName());
-        context.setVariable("doctorSpecialization", doctor.getSpecialization());
-        context.setVariable("hospitalName", hospital.getName());
-        context.setVariable("hospitalAddress", hospital.getLocation().getAddress());
-        context.setVariable("hospitalCity", hospital.getLocation().getCity());
-        context.setVariable("hospitalPhone", hospital.getContactInfo().getPhoneNumber());
-        context.setVariable("hospitalEmail", hospital.getContactInfo().getEmail());
-        context.setVariable("purpose", appointment.getPurpose() != null && !appointment.getPurpose().isEmpty() 
-                ? appointment.getPurpose() : "General Consultation");
-        context.setVariable("currentYear", String.valueOf(LocalDateTime.now().getYear()));
-        context.setVariable("baseUrl", baseUrl);
+        log.debug("Sending government hospital appointment confirmation to: {}", patient.getEmail());
         
-        String htmlContent = templateEngine.process("emails/appointment-confirmation-government", context);
-        
-        sendEmail(
-            patient.getEmail(),
-            "Appointment Confirmation - " + hospital.getName(),
-            htmlContent
-        );
+        try {
+            // Build email context using builder
+            Context context = emailTemplateBuilder.buildAppointmentContext(
+                    patient, appointment, doctor, hospital);
+            
+            // Process template
+            String htmlContent = templateEngine.process(
+                    "emails/appointment-confirmation-government", context);
+            
+            // Send email
+            sendEmail(
+                    patient.getEmail(),
+                    "Appointment Confirmation - " + hospital.getName(),
+                    htmlContent
+            );
+            
+            log.info("Government hospital appointment confirmation sent successfully to {} for appointment {}",
+                    patient.getEmail(), appointment.getId());
+            
+        } catch (MessagingException e) {
+            log.error("Failed to send government appointment confirmation to {} for appointment {}: {}",
+                    patient.getEmail(), appointment.getId(), e.getMessage(), e);
+            throw new EmailSendException(
+                    "Failed to send government appointment confirmation email", e);
+        }
     }
     
     /**
@@ -80,34 +81,38 @@ public class EmailService {
             Appointment appointment,
             Doctor doctor,
             Hospital hospital,
-            Payment payment) throws MessagingException {
+            Payment payment) {
         
-        Context context = new Context();
-        context.setVariable("patientName", patient.getName());
-        context.setVariable("appointmentId", appointment.getId());
-        context.setVariable("appointmentDate", appointment.getAppointmentDateTime().format(DATE_FORMATTER));
-        context.setVariable("appointmentTime", appointment.getAppointmentDateTime().format(TIME_FORMATTER));
-        context.setVariable("doctorName", doctor.getName());
-        context.setVariable("doctorSpecialization", doctor.getSpecialization());
-        context.setVariable("hospitalName", hospital.getName());
-        context.setVariable("hospitalAddress", hospital.getLocation().getAddress());
-        context.setVariable("hospitalCity", hospital.getLocation().getCity());
-        context.setVariable("hospitalPhone", hospital.getContactInfo().getPhoneNumber());
-        context.setVariable("hospitalEmail", hospital.getContactInfo().getEmail());
-        context.setVariable("purpose", appointment.getPurpose() != null && !appointment.getPurpose().isEmpty() 
-                ? appointment.getPurpose() : "General Consultation");
-        context.setVariable("amount", formatCurrency(payment.getAmount()));
-        context.setVariable("paymentId", payment.getId());
-        context.setVariable("currentYear", String.valueOf(LocalDateTime.now().getYear()));
-        context.setVariable("baseUrl", baseUrl);
+        log.debug("Sending cash payment appointment confirmation to: {}", patient.getEmail());
         
-        String htmlContent = templateEngine.process("emails/appointment-confirmation-cash", context);
-        
-        sendEmail(
-            patient.getEmail(),
-            "Appointment Confirmation - Payment Required at Hospital",
-            htmlContent
-        );
+        try {
+            // Build email context using builder
+            Context context = emailTemplateBuilder.buildAppointmentContext(
+                    patient, appointment, doctor, hospital);
+            
+            // Add payment information
+            emailTemplateBuilder.addPaymentInfo(context, payment);
+            
+            // Process template
+            String htmlContent = templateEngine.process(
+                    "emails/appointment-confirmation-cash", context);
+            
+            // Send email
+            sendEmail(
+                    patient.getEmail(),
+                    "Appointment Confirmation - Payment Required at Hospital",
+                    htmlContent
+            );
+            
+            log.info("Cash payment appointment confirmation sent successfully to {} for appointment {} with payment {}",
+                    patient.getEmail(), appointment.getId(), payment.getId());
+            
+        } catch (MessagingException e) {
+            log.error("Failed to send cash payment appointment confirmation to {} for appointment {}: {}",
+                    patient.getEmail(), appointment.getId(), e.getMessage(), e);
+            throw new EmailSendException(
+                    "Failed to send cash payment appointment confirmation email", e);
+        }
     }
     
     /**
@@ -118,36 +123,38 @@ public class EmailService {
             Appointment appointment,
             Doctor doctor,
             Hospital hospital,
-            Payment payment) throws MessagingException {
+            Payment payment) {
         
-        Context context = new Context();
-        context.setVariable("patientName", patient.getName());
-        context.setVariable("appointmentId", appointment.getId());
-        context.setVariable("appointmentDate", appointment.getAppointmentDateTime().format(DATE_FORMATTER));
-        context.setVariable("appointmentTime", appointment.getAppointmentDateTime().format(TIME_FORMATTER));
-        context.setVariable("doctorName", doctor.getName());
-        context.setVariable("doctorSpecialization", doctor.getSpecialization());
-        context.setVariable("hospitalName", hospital.getName());
-        context.setVariable("hospitalAddress", hospital.getLocation().getAddress());
-        context.setVariable("hospitalCity", hospital.getLocation().getCity());
-        context.setVariable("hospitalPhone", hospital.getContactInfo().getPhoneNumber());
-        context.setVariable("hospitalEmail", hospital.getContactInfo().getEmail());
-        context.setVariable("purpose", appointment.getPurpose() != null && !appointment.getPurpose().isEmpty() 
-                ? appointment.getPurpose() : "General Consultation");
-        context.setVariable("amount", formatCurrency(payment.getAmount()));
-        context.setVariable("paymentId", payment.getId());
-        context.setVariable("transactionId", payment.getTransactionId());
-        context.setVariable("paymentDate", payment.getCreatedAt().format(DATE_FORMATTER));
-        context.setVariable("currentYear", String.valueOf(LocalDateTime.now().getYear()));
-        context.setVariable("baseUrl", baseUrl);
+        log.debug("Sending card payment appointment confirmation to: {}", patient.getEmail());
         
-        String htmlContent = templateEngine.process("emails/appointment-confirmation-card", context);
-        
-        sendEmail(
-            patient.getEmail(),
-            "Appointment Confirmation - Payment Successful",
-            htmlContent
-        );
+        try {
+            // Build email context using builder
+            Context context = emailTemplateBuilder.buildAppointmentContext(
+                    patient, appointment, doctor, hospital);
+            
+            // Add payment information
+            emailTemplateBuilder.addPaymentInfo(context, payment);
+            
+            // Process template
+            String htmlContent = templateEngine.process(
+                    "emails/appointment-confirmation-card", context);
+            
+            // Send email
+            sendEmail(
+                    patient.getEmail(),
+                    "Appointment Confirmation - Payment Successful",
+                    htmlContent
+            );
+            
+            log.info("Card payment appointment confirmation sent successfully to {} for appointment {} with payment {}",
+                    patient.getEmail(), appointment.getId(), payment.getId());
+            
+        } catch (MessagingException e) {
+            log.error("Failed to send card payment appointment confirmation to {} for appointment {}: {}",
+                    patient.getEmail(), appointment.getId(), e.getMessage(), e);
+            throw new EmailSendException(
+                    "Failed to send card payment appointment confirmation email", e);
+        }
     }
     
     /**
@@ -158,42 +165,46 @@ public class EmailService {
             Appointment appointment,
             Doctor doctor,
             Hospital hospital,
-            Payment payment) throws MessagingException {
+            Payment payment) {
         
-        Context context = new Context();
-        context.setVariable("patientName", patient.getName());
-        context.setVariable("appointmentId", appointment.getId());
-        context.setVariable("appointmentDate", appointment.getAppointmentDateTime().format(DATE_FORMATTER));
-        context.setVariable("appointmentTime", appointment.getAppointmentDateTime().format(TIME_FORMATTER));
-        context.setVariable("doctorName", doctor.getName());
-        context.setVariable("doctorSpecialization", doctor.getSpecialization());
-        context.setVariable("hospitalName", hospital.getName());
-        context.setVariable("hospitalAddress", hospital.getLocation().getAddress());
-        context.setVariable("hospitalCity", hospital.getLocation().getCity());
-        context.setVariable("hospitalPhone", hospital.getContactInfo().getPhoneNumber());
-        context.setVariable("hospitalEmail", hospital.getContactInfo().getEmail());
-        context.setVariable("purpose", appointment.getPurpose() != null && !appointment.getPurpose().isEmpty() 
-                ? appointment.getPurpose() : "General Consultation");
-        context.setVariable("amount", formatCurrency(payment.getAmount()));
-        context.setVariable("insuranceProvider", payment.getInsuranceProvider());
-        context.setVariable("policyNumber", payment.getInsurancePolicyNumber());
-        context.setVariable("paymentId", payment.getId());
-        context.setVariable("currentYear", String.valueOf(LocalDateTime.now().getYear()));
-        context.setVariable("baseUrl", baseUrl);
+        log.debug("Sending insurance appointment confirmation to: {}", patient.getEmail());
         
-        String htmlContent = templateEngine.process("emails/appointment-confirmation-insurance", context);
-        
-        sendEmail(
-            patient.getEmail(),
-            "Appointment Confirmation - Insurance Claim Pending",
-            htmlContent
-        );
+        try {
+            // Build email context using builder
+            Context context = emailTemplateBuilder.buildAppointmentContext(
+                    patient, appointment, doctor, hospital);
+            
+            // Add insurance information
+            emailTemplateBuilder.addInsuranceInfo(context, payment);
+            
+            // Process template
+            String htmlContent = templateEngine.process(
+                    "emails/appointment-confirmation-insurance", context);
+            
+            // Send email
+            sendEmail(
+                    patient.getEmail(),
+                    "Appointment Confirmation - Insurance Claim Pending",
+                    htmlContent
+            );
+            
+            log.info("Insurance appointment confirmation sent successfully to {} for appointment {} with payment {}",
+                    patient.getEmail(), appointment.getId(), payment.getId());
+            
+        } catch (MessagingException e) {
+            log.error("Failed to send insurance appointment confirmation to {} for appointment {}: {}",
+                    patient.getEmail(), appointment.getId(), e.getMessage(), e);
+            throw new EmailSendException(
+                    "Failed to send insurance appointment confirmation email", e);
+        }
     }
     
     /**
      * Helper method to send email
      */
     private void sendEmail(String to, String subject, String htmlContent) throws MessagingException {
+        log.debug("Preparing to send email to: {} with subject: {}", to, subject);
+        
         MimeMessage message = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
         
@@ -203,12 +214,7 @@ public class EmailService {
         helper.setText(htmlContent, true);
         
         mailSender.send(message);
-    }
-    
-    /**
-     * Format currency amount
-     */
-    private String formatCurrency(BigDecimal amount) {
-        return String.format("LKR %.2f", amount);
+        
+        log.debug("Email sent successfully to: {}", to);
     }
 }

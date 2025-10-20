@@ -17,6 +17,7 @@ public class UserDTO {
     private UserRole role;
     private LocalDate dateOfBirth;
     private String gender;
+    private String bloodType;
     private String address;
     private String contactNumber;
     private String qrCode; // Base64 encoded QR code image

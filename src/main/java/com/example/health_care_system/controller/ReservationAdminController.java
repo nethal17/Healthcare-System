@@ -1,7 +1,8 @@
 package com.example.health_care_system.controller;
 
 import com.example.health_care_system.repository.TimeSlotReservationRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -12,21 +13,25 @@ import java.util.Map;
  * Admin controller for managing reservations
  * TEMPORARY: Only for development/testing
  */
+@Slf4j
 @RestController
 @RequestMapping("/admin/reservations")
+@RequiredArgsConstructor
 public class ReservationAdminController {
     
-    @Autowired
-    private TimeSlotReservationRepository reservationRepository;
+    private final TimeSlotReservationRepository reservationRepository;
     
     /**
      * Delete all reservations - USE ONLY FOR TESTING/CLEANUP
      */
     @PostMapping("/delete-all")
     public Map<String, Object> deleteAllReservations() {
+        log.warn("Deleting all reservations - TESTING ONLY");
         try {
             long count = reservationRepository.count();
             reservationRepository.deleteAll();
+            
+            log.info("Deleted {} reservations", count);
             
             return Map.of(
                 "success", true,
@@ -34,6 +39,7 @@ public class ReservationAdminController {
                 "deletedCount", count
             );
         } catch (Exception e) {
+            log.error("Error deleting reservations: {}", e.getMessage(), e);
             return Map.of(
                 "success", false,
                 "message", "Error: " + e.getMessage()
@@ -46,14 +52,18 @@ public class ReservationAdminController {
      */
     @PostMapping("/status")
     public Map<String, Object> getReservationStatus() {
+        log.debug("Getting reservation status");
         try {
             long totalCount = reservationRepository.count();
+            
+            log.debug("Total reservations: {}", totalCount);
             
             return Map.of(
                 "success", true,
                 "totalReservations", totalCount
             );
         } catch (Exception e) {
+            log.error("Error getting reservation status: {}", e.getMessage(), e);
             return Map.of(
                 "success", false,
                 "message", "Error: " + e.getMessage()

@@ -1,180 +1,64 @@
 package com.example.health_care_system.service;
 
+import com.example.health_care_system.exception.ResourceNotFoundException;
+import com.example.health_care_system.factory.PaymentStrategyFactory;
 import com.example.health_care_system.model.Payment;
-import com.example.health_care_system.model.Appointment;
-import com.example.health_care_system.model.Doctor;
-import com.example.health_care_system.model.Hospital;
-import com.example.health_care_system.model.Patient;
 import com.example.health_care_system.repository.PaymentRepository;
 import com.example.health_care_system.repository.AppointmentRepository;
-import com.example.health_care_system.repository.DoctorRepository;
-import com.example.health_care_system.repository.HospitalRepository;
-import com.example.health_care_system.repository.PatientRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.example.health_care_system.strategy.PaymentContext;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+@Slf4j
 @Service
+@RequiredArgsConstructor
 public class PaymentService {
     
-    @Autowired
-    private PaymentRepository paymentRepository;
-    
-    @Autowired
-    private AppointmentRepository appointmentRepository;
-    
-    @Autowired
-    private DoctorRepository doctorRepository;
-    
-    @Autowired
-    private HospitalRepository hospitalRepository;
-    
-    @Autowired
-    private PatientRepository patientRepository;
+    private final PaymentRepository paymentRepository;
+    private final AppointmentRepository appointmentRepository;
+    private final PaymentStrategyFactory paymentStrategyFactory;
     
     /**
-     * Create a payment record for card payment after successful Stripe transaction
+     * Create a payment record using Strategy Pattern
+     * This method replaces createCardPayment(), createCashPayment(), and createInsurancePayment()
      * 
      * @param appointmentId The appointment ID
-     * @param transactionId The Stripe transaction/session ID
+     * @param paymentMethod The payment method (CARD, CASH, INSURANCE, etc.)
      * @param amount The payment amount
+     * @param context PaymentContext containing additional payment information (transactionId, insurance details, etc.)
      * @return The created Payment object
      */
-    public Payment createCardPayment(String appointmentId, String transactionId, BigDecimal amount) {
-        // Get appointment
-        Appointment appointment = appointmentRepository.findById(appointmentId)
-                .orElseThrow(() -> new RuntimeException("Appointment not found"));
+    @Transactional
+    public Payment createPayment(String appointmentId, Payment.PaymentMethod paymentMethod, 
+                                BigDecimal amount, PaymentContext context) {
+        log.debug("Creating {} payment for appointment ID: {}", paymentMethod, appointmentId);
         
-        // Get patient
-        Patient patient = patientRepository.findById(appointment.getPatientId())
-                .orElseThrow(() -> new RuntimeException("Patient not found"));
+        // Validate appointment exists
+        appointmentRepository.findById(appointmentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Appointment not found with ID: " + appointmentId));
         
-        // Get doctor
-        Doctor doctor = doctorRepository.findById(appointment.getDoctorId())
-                .orElseThrow(() -> new RuntimeException("Doctor not found"));
+        // Execute payment strategy (strategy handles saving)
+        Payment payment = paymentStrategyFactory.getStrategy(paymentMethod)
+                .createPayment(appointmentId, amount, context);
         
-        // Get hospital
-        Hospital hospital = hospitalRepository.findById(doctor.getHospitalId())
-                .orElseThrow(() -> new RuntimeException("Hospital not found"));
+        log.info("Payment created successfully with ID: {} for appointment: {}", 
+                payment.getId(), appointmentId);
         
-        // Create payment record
-        Payment payment = new Payment();
-        payment.setAppointmentId(appointmentId);
-        
-        // User/Patient Information
-        payment.setPatientId(patient.getId());
-        payment.setPatientName(patient.getName());
-        
-        // Hospital Information
-        payment.setHospitalId(hospital.getId());
-        payment.setHospitalName(hospital.getName());
-        
-        // Doctor Information
-        payment.setDoctorId(doctor.getId());
-        payment.setDoctorName(doctor.getName());
-        payment.setDoctorSpecialization(doctor.getSpecialization());
-        
-        // Payment Information
-        payment.setAmount(amount);
-        payment.setPaymentMethod(Payment.PaymentMethod.CARD);
-        payment.setStatus(Payment.PaymentStatus.COMPLETED);
-        payment.setTransactionId(transactionId);
-        
-        // Timestamps
-        LocalDateTime now = LocalDateTime.now();
-        payment.setPaymentDate(now);
-        payment.setCreatedAt(now);
-        payment.setUpdatedAt(now);
-        
-        // Save and return
-        return paymentRepository.save(payment);
-    }
-    
-    /**
-     * Create a payment record for cash payment
-     */
-    public Payment createCashPayment(String appointmentId, BigDecimal amount) {
-        Appointment appointment = appointmentRepository.findById(appointmentId)
-                .orElseThrow(() -> new RuntimeException("Appointment not found"));
-        
-        Patient patient = patientRepository.findById(appointment.getPatientId())
-                .orElseThrow(() -> new RuntimeException("Patient not found"));
-        
-        Doctor doctor = doctorRepository.findById(appointment.getDoctorId())
-                .orElseThrow(() -> new RuntimeException("Doctor not found"));
-        
-        Hospital hospital = hospitalRepository.findById(doctor.getHospitalId())
-                .orElseThrow(() -> new RuntimeException("Hospital not found"));
-        
-        Payment payment = new Payment();
-        payment.setAppointmentId(appointmentId);
-        payment.setPatientId(patient.getId());
-        payment.setPatientName(patient.getName());
-        payment.setHospitalId(hospital.getId());
-        payment.setHospitalName(hospital.getName());
-        payment.setDoctorId(doctor.getId());
-        payment.setDoctorName(doctor.getName());
-        payment.setDoctorSpecialization(doctor.getSpecialization());
-        payment.setAmount(amount);
-        payment.setPaymentMethod(Payment.PaymentMethod.CASH);
-        payment.setStatus(Payment.PaymentStatus.PENDING);
-        
-        LocalDateTime now = LocalDateTime.now();
-        payment.setPaymentDate(now);
-        payment.setCreatedAt(now);
-        payment.setUpdatedAt(now);
-        
-        return paymentRepository.save(payment);
-    }
-    
-    /**
-     * Create a payment record for insurance payment
-     */
-    public Payment createInsurancePayment(String appointmentId, BigDecimal amount, 
-                                          String insuranceProvider, String policyNumber) {
-        Appointment appointment = appointmentRepository.findById(appointmentId)
-                .orElseThrow(() -> new RuntimeException("Appointment not found"));
-        
-        Patient patient = patientRepository.findById(appointment.getPatientId())
-                .orElseThrow(() -> new RuntimeException("Patient not found"));
-        
-        Doctor doctor = doctorRepository.findById(appointment.getDoctorId())
-                .orElseThrow(() -> new RuntimeException("Doctor not found"));
-        
-        Hospital hospital = hospitalRepository.findById(doctor.getHospitalId())
-                .orElseThrow(() -> new RuntimeException("Hospital not found"));
-        
-        Payment payment = new Payment();
-        payment.setAppointmentId(appointmentId);
-        payment.setPatientId(patient.getId());
-        payment.setPatientName(patient.getName());
-        payment.setHospitalId(hospital.getId());
-        payment.setHospitalName(hospital.getName());
-        payment.setDoctorId(doctor.getId());
-        payment.setDoctorName(doctor.getName());
-        payment.setDoctorSpecialization(doctor.getSpecialization());
-        payment.setAmount(amount);
-        payment.setPaymentMethod(Payment.PaymentMethod.INSURANCE);
-        payment.setStatus(Payment.PaymentStatus.PENDING);
-        payment.setInsuranceProvider(insuranceProvider);
-        payment.setInsurancePolicyNumber(policyNumber);
-        
-        LocalDateTime now = LocalDateTime.now();
-        payment.setPaymentDate(now);
-        payment.setCreatedAt(now);
-        payment.setUpdatedAt(now);
-        
-        return paymentRepository.save(payment);
+        return payment;
     }
     
     /**
      * Get payment by appointment ID
      */
     public Optional<Payment> getPaymentByAppointmentId(String appointmentId) {
+        log.debug("Fetching payment for appointment ID: {}", appointmentId);
         return paymentRepository.findByAppointmentId(appointmentId);
     }
     
@@ -182,6 +66,7 @@ public class PaymentService {
      * Get all payments for a patient
      */
     public List<Payment> getPaymentsByPatientId(String patientId) {
+        log.debug("Fetching payments for patient ID: {}", patientId);
         return paymentRepository.findByPatientId(patientId);
     }
     
@@ -189,26 +74,34 @@ public class PaymentService {
      * Get payment by transaction ID
      */
     public Optional<Payment> getPaymentByTransactionId(String transactionId) {
+        log.debug("Fetching payment by transaction ID: {}", transactionId);
         return paymentRepository.findByTransactionId(transactionId);
     }
     
     /**
      * Update payment status
      */
+    @Transactional
     public Payment updatePaymentStatus(String paymentId, Payment.PaymentStatus status) {
+        log.debug("Updating payment status for ID: {} to {}", paymentId, status);
+        
         Payment payment = paymentRepository.findById(paymentId)
-                .orElseThrow(() -> new RuntimeException("Payment not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Payment not found with ID: " + paymentId));
         
         payment.setStatus(status);
         payment.setUpdatedAt(LocalDateTime.now());
         
-        return paymentRepository.save(payment);
+        Payment updatedPayment = paymentRepository.save(payment);
+        log.info("Payment status updated successfully for ID: {}", paymentId);
+        
+        return updatedPayment;
     }
     
     /**
      * Get all payments by hospital
      */
     public List<Payment> getPaymentsByHospitalId(String hospitalId) {
+        log.debug("Fetching payments for hospital ID: {}", hospitalId);
         return paymentRepository.findByHospitalId(hospitalId);
     }
     
@@ -216,6 +109,7 @@ public class PaymentService {
      * Get all payments by doctor
      */
     public List<Payment> getPaymentsByDoctorId(String doctorId) {
+        log.debug("Fetching payments for doctor ID: {}", doctorId);
         return paymentRepository.findByDoctorId(doctorId);
     }
 }

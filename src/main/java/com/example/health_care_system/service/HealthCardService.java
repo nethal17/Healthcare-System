@@ -46,6 +46,7 @@ public class HealthCardService {
         HealthCard healthCard = new HealthCard();
         healthCard.setPatientId(patient.getId());
         healthCard.setPatientName(patient.getName());
+        healthCard.setBloodType(patient.getBloodType());
         healthCard.setQrCode(qrCode);
         healthCard.setStatus("ACTIVE");
         healthCard.setCreateDate(LocalDate.now());
@@ -122,6 +123,7 @@ public class HealthCardService {
         dto.setId(healthCard.getId());
         dto.setPatientId(healthCard.getPatientId());
         dto.setPatientName(healthCard.getPatientName());
+        dto.setBloodType(healthCard.getBloodType());
         dto.setQrCode(healthCard.getQrCode());
         dto.setStatus(healthCard.getStatus());
         dto.setCreateDate(healthCard.getCreateDate());
@@ -208,17 +210,27 @@ public class HealthCardService {
         g2d.setStroke(new BasicStroke(2));
         g2d.drawLine(50, contentY + 75, cardWidth - 300, contentY + 75);
         
+        // Blood Type Section
+        g2d.setColor(new Color(147, 197, 253)); // Blue 300
+        g2d.setFont(new Font("SansSerif", Font.BOLD, 14));
+        g2d.drawString("BLOOD TYPE", 50, contentY + 110);
+        
+        g2d.setColor(new Color(220, 38, 38)); // Red 600 - important medical info
+        g2d.setFont(new Font("SansSerif", Font.BOLD, 28));
+        String bloodType = healthCard.getBloodType() != null ? healthCard.getBloodType() : "N/A";
+        g2d.drawString(bloodType, 50, contentY + 140);
+        
         // Card ID Section - Only show last 6 digits
         g2d.setColor(new Color(147, 197, 253)); // Blue 300
         g2d.setFont(new Font("SansSerif", Font.BOLD, 14));
-        g2d.drawString("CARD NUMBER", 50, contentY + 110);
+        g2d.drawString("CARD NUMBER", 200, contentY + 110);
         
         g2d.setColor(new Color(55, 65, 81)); // Gray 700
         g2d.setFont(new Font("Monospaced", Font.PLAIN, 20));
         String fullCardId = healthCard.getId();
         // Show only last 12 digits
         String lastTwelveDigits = fullCardId.substring(Math.max(0, fullCardId.length() - 12));
-        g2d.drawString(lastTwelveDigits.toUpperCase(), 50, contentY + 140);
+        g2d.drawString(lastTwelveDigits.toUpperCase(), 200, contentY + 140);
         
         // Date Information Section
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd MMM yyyy");

@@ -23,6 +23,9 @@ public class RegisterRequest {
     @NotBlank(message = "Gender is required")
     private String gender;
     
+    @NotBlank(message = "Blood type is required")
+    private String bloodType;
+    
     @NotBlank(message = "Address is required")
     @Size(max = 500, message = "Address must not exceed 500 characters")
     private String address;

@@ -14,7 +14,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-class TimeSlotReservationServiceTest {
+class TimeSlotReservationServiceUnitTest {
 
     @Mock
     private TimeSlotReservationRepository reservationRepository;
@@ -60,7 +60,7 @@ class TimeSlotReservationServiceTest {
     }
 
     @Test
-    void confirm_and_cancel_and_isReserved_and_validity_and_remainingSeconds() {
+    void confirm_and_cancel_and_validity_and_remainingSeconds() {
         LocalDateTime slot = LocalDateTime.now().plusMinutes(1);
         TimeSlotReservation active = new TimeSlotReservation();
         active.setId("r2");
@@ -72,25 +72,22 @@ class TimeSlotReservationServiceTest {
         when(reservationRepository.findByPatientIdAndSessionIdAndStatus("p1","s1",TimeSlotReservation.ReservationStatus.ACTIVE))
             .thenReturn(Optional.of(active));
 
-        // confirm
         when(reservationRepository.save(any())).thenAnswer(i -> i.getArgument(0));
         service.confirmReservation("p1","s1");
         assertEquals(TimeSlotReservation.ReservationStatus.CONFIRMED, active.getStatus());
 
-        // cancel
         active.setStatus(TimeSlotReservation.ReservationStatus.ACTIVE);
         when(reservationRepository.findByPatientIdAndSessionIdAndStatus("p1","s1",TimeSlotReservation.ReservationStatus.ACTIVE))
             .thenReturn(Optional.of(active));
         service.cancelReservation("p1","s1");
         assertEquals(TimeSlotReservation.ReservationStatus.CANCELLED, active.getStatus());
 
-        // isReserved
         TimeSlotReservation other = new TimeSlotReservation(); other.setPatientId("other"); other.setSlotDateTime(slot);
         when(reservationRepository.findByDoctorIdAndSlotDateTimeAndStatus("d1", slot, TimeSlotReservation.ReservationStatus.ACTIVE))
             .thenReturn(List.of(other));
         assertTrue(service.isSlotReserved("d1", slot, "me"));
 
-        // validity and remaining seconds: simulate present active reservation
+        // validity and remaining seconds
         active.setStatus(TimeSlotReservation.ReservationStatus.ACTIVE);
         active.setCreatedAt(LocalDateTime.now().minusMinutes(1));
         when(reservationRepository.findByPatientIdAndSessionIdAndStatus("p1","s1",TimeSlotReservation.ReservationStatus.ACTIVE))
@@ -98,6 +95,21 @@ class TimeSlotReservationServiceTest {
         assertTrue(service.isReservationValid("p1","s1"));
         long remaining = service.getRemainingSeconds("p1","s1");
         assertTrue(remaining >= 0);
+    }
+
+    @Test
+    void confirmReservation_notFound_noOp() {
+        when(reservationRepository.findByPatientIdAndSessionIdAndStatus("x","s", TimeSlotReservation.ReservationStatus.ACTIVE))
+            .thenReturn(Optional.empty());
+        // should not throw
+        assertDoesNotThrow(() -> service.confirmReservation("x","s"));
+    }
+
+    @Test
+    void cancelReservation_notFound_noOp() {
+        when(reservationRepository.findByPatientIdAndSessionIdAndStatus("y","s", TimeSlotReservation.ReservationStatus.ACTIVE))
+            .thenReturn(Optional.empty());
+        assertDoesNotThrow(() -> service.cancelReservation("y","s"));
     }
 }
 

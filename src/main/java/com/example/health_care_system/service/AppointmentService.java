@@ -1,5 +1,10 @@
 package com.example.health_care_system.service;
 
+import com.example.health_care_system.config.AppointmentConfiguration;
+import com.example.health_care_system.exception.AppointmentNotFoundException;
+import com.example.health_care_system.exception.BusinessLogicException;
+import com.example.health_care_system.exception.ResourceNotFoundException;
+import com.example.health_care_system.exception.ValidationException;
 import com.example.health_care_system.model.Appointment;
 import com.example.health_care_system.model.Doctor;
 import com.example.health_care_system.model.Patient;
@@ -8,7 +13,8 @@ import com.example.health_care_system.repository.AppointmentRepository;
 import com.example.health_care_system.repository.DoctorRepository;
 import com.example.health_care_system.repository.PatientRepository;
 import com.example.health_care_system.repository.TimeSlotReservationRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,36 +24,27 @@ import java.time.LocalTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
+@RequiredArgsConstructor
 public class AppointmentService {
     
-    @Autowired
-    private AppointmentRepository appointmentRepository;
-    
-    @Autowired
-    private DoctorRepository doctorRepository;
-    
-    @Autowired
-    private PatientRepository patientRepository;
-    
-    @Autowired
-    private TimeSlotReservationRepository reservationRepository;
-    
-    // Working hours configuration
-    private static final LocalTime WORKING_START = LocalTime.of(9, 0);  // 9:00 AM
-    private static final LocalTime WORKING_END = LocalTime.of(17, 0);   // 5:00 PM
-    private static final LocalTime LUNCH_START = LocalTime.of(13, 0);   // 1:00 PM
-    private static final LocalTime LUNCH_END = LocalTime.of(14, 0);     // 2:00 PM
-    private static final int SLOT_DURATION_MINUTES = 30;                 // 30-minute slots
+    private final AppointmentRepository appointmentRepository;
+    private final DoctorRepository doctorRepository;
+    private final PatientRepository patientRepository;
+    private final TimeSlotReservationRepository reservationRepository;
+    private final AppointmentConfiguration appointmentConfig;
     
     /**
      * Get available time slots for a doctor on a specific date
      * Excludes booked appointments and currently reserved slots
      */
     public List<LocalTime> getAvailableTimeSlots(String doctorId, LocalDate date) {
+        log.debug("Fetching available time slots for doctor ID: {} on date: {}", doctorId, date);
+        
         // Validate date is not in the past
         if (date.isBefore(LocalDate.now())) {
-            throw new RuntimeException("Cannot book appointments for past dates");
+            throw new ValidationException("Cannot book appointments for past dates");
         }
         return getAvailableTimeSlots(doctorId, date, null);
     }
@@ -58,9 +55,12 @@ public class AppointmentService {
      * @param excludePatientId - Patient ID to exclude from reservation check (their own reservation)
      */
     public List<LocalTime> getAvailableTimeSlots(String doctorId, LocalDate date, String excludePatientId) {
+        log.debug("Fetching available time slots for doctor ID: {} on date: {} (excluding patient: {})", 
+                doctorId, date, excludePatientId);
+        
         // Validate date is not in the past
         if (date.isBefore(LocalDate.now())) {
-            throw new RuntimeException("Cannot book appointments for past dates");
+            throw new ValidationException("Cannot book appointments for past dates");
         }
         
         List<LocalTime> allSlots = generateAllTimeSlots();
@@ -74,6 +74,9 @@ public class AppointmentService {
             .stream()
             .filter(apt -> apt.getStatus() == Appointment.AppointmentStatus.SCHEDULED)
             .toList();
+        
+        log.debug("Found {} existing appointments for doctor {} on {}", 
+                existingAppointments.size(), doctorId, date);
         
         // Remove booked slots
         Set<LocalTime> bookedSlots = existingAppointments.stream()
@@ -94,6 +97,8 @@ public class AppointmentService {
             .map(res -> res.getSlotDateTime().toLocalTime())
             .collect(Collectors.toSet());
         
+        log.debug("Found {} reserved slots for doctor {} on {}", reservedSlots.size(), doctorId, date);
+        
         // Filter out booked and reserved slots
         List<LocalTime> availableSlots = allSlots.stream()
             .filter(slot -> !bookedSlots.contains(slot))
@@ -103,10 +108,14 @@ public class AppointmentService {
         // If the date is today, filter out past time slots
         if (date.equals(LocalDate.now())) {
             LocalTime now = LocalTime.now();
+            int advanceHours = appointmentConfig.getMinimumAdvanceBookingHours();
             availableSlots = availableSlots.stream()
-                .filter(slot -> slot.isAfter(now.plusHours(1))) // Need at least 1 hour notice
+                .filter(slot -> slot.isAfter(now.plusHours(advanceHours)))
                 .collect(Collectors.toList());
         }
+        
+        log.info("Found {} available time slots for doctor {} on {}", 
+                availableSlots.size(), doctorId, date);
         
         return availableSlots;
     }
@@ -139,27 +148,35 @@ public class AppointmentService {
      */
     private List<LocalTime> generateAllTimeSlots() {
         List<LocalTime> slots = new ArrayList<>();
-        LocalTime currentSlot = WORKING_START;
+        LocalTime currentSlot = appointmentConfig.getWorkingStart();
+        LocalTime workingEnd = appointmentConfig.getWorkingEnd();
+        LocalTime lunchStart = appointmentConfig.getLunchStart();
+        LocalTime lunchEnd = appointmentConfig.getLunchEnd();
+        int slotDuration = appointmentConfig.getSlotDurationMinutes();
         
-        while (currentSlot.isBefore(WORKING_END)) {
+        while (currentSlot.isBefore(workingEnd)) {
             // Skip lunch hour
-            if (currentSlot.isBefore(LUNCH_START) || currentSlot.isAfter(LUNCH_END) || currentSlot.equals(LUNCH_END)) {
+            if (currentSlot.isBefore(lunchStart) || currentSlot.isAfter(lunchEnd) || currentSlot.equals(lunchEnd)) {
                 slots.add(currentSlot);
             }
-            currentSlot = currentSlot.plusMinutes(SLOT_DURATION_MINUTES);
+            currentSlot = currentSlot.plusMinutes(slotDuration);
         }
         
+        log.debug("Generated {} time slots for the day", slots.size());
         return slots;
     }
     
     /**
-     * Get next 7 days for date selection
+     * Get next N days for date selection based on configuration
      */
     public List<LocalDate> getNextSevenDays() {
+        int daysAhead = appointmentConfig.getMaxDaysAhead();
+        log.debug("Generating next {} days for appointment booking", daysAhead);
+        
         List<LocalDate> dates = new ArrayList<>();
         LocalDate today = LocalDate.now();
         
-        for (int i = 0; i < 7; i++) {
+        for (int i = 0; i < daysAhead; i++) {
             dates.add(today.plusDays(i));
         }
         
@@ -178,13 +195,16 @@ public class AppointmentService {
             String purpose,
             String notes) {
         
+        log.info("Booking appointment for patient {} with doctor {} at {}", 
+                patientId, doctorId, appointmentDateTime);
+        
         // Validate doctor exists
         Doctor doctor = doctorRepository.findById(doctorId)
-            .orElseThrow(() -> new RuntimeException("Doctor not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("Doctor not found with ID: " + doctorId));
         
         // Validate patient exists
         Patient patient = patientRepository.findById(patientId)
-            .orElseThrow(() -> new RuntimeException("Patient not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("Patient not found with ID: " + patientId));
         
         // CRITICAL: Check if appointment already exists for this exact time slot (prevent double booking)
         List<Appointment> existingAppointments = appointmentRepository
@@ -199,7 +219,8 @@ public class AppointmentService {
             .anyMatch(apt -> apt.getStatus() == Appointment.AppointmentStatus.SCHEDULED);
         
         if (slotAlreadyBooked) {
-            throw new RuntimeException("This time slot has just been booked by another patient. Please select a different time.");
+            log.warn("Time slot {} already booked for doctor {}", appointmentDateTime, doctorId);
+            throw new BusinessLogicException("This time slot has just been booked by another patient. Please select a different time.");
         }
         
         // Additional validation: Check if the time slot is in the available slots
@@ -207,7 +228,8 @@ public class AppointmentService {
         List<LocalTime> availableSlots = getAvailableTimeSlots(doctorId, date);
         
         if (!availableSlots.contains(appointmentDateTime.toLocalTime())) {
-            throw new RuntimeException("Selected time slot is no longer available");
+            log.warn("Time slot {} is not available for doctor {}", appointmentDateTime, doctorId);
+            throw new BusinessLogicException("Selected time slot is no longer available");
         }
         
         // Create appointment (using MongoDB ObjectIds)
@@ -225,6 +247,7 @@ public class AppointmentService {
         
         // Save appointment (MongoDB will auto-generate the id)
         Appointment savedAppointment = appointmentRepository.save(appointment);
+        log.info("Appointment created with ID: {}", savedAppointment.getId());
         
         // Update patient's appointments list
         if (patient.getAppointments() == null) {
@@ -240,6 +263,9 @@ public class AppointmentService {
         doctor.getAppointments().add(savedAppointment);
         doctorRepository.save(doctor);
         
+        log.info("Successfully booked appointment ID: {} for patient {} with doctor {}", 
+                savedAppointment.getId(), patientId, doctorId);
+        
         return savedAppointment;
     }
     
@@ -247,6 +273,8 @@ public class AppointmentService {
      * Get patient's appointments
      */
     public List<Appointment> getPatientAppointments(String patientId) {
+        log.debug("Fetching appointments for patient ID: {}", patientId);
+        
         List<Appointment> appointments = appointmentRepository.findByPatientId(patientId);
         
         // Sort by date (upcoming first, then past)
@@ -262,6 +290,7 @@ public class AppointmentService {
             }
         });
         
+        log.info("Found {} appointments for patient {}", appointments.size(), patientId);
         return appointments;
     }
     
@@ -269,37 +298,50 @@ public class AppointmentService {
      * Get doctor's appointments
      */
     public List<Appointment> getDoctorAppointments(String doctorId) {
-        return appointmentRepository.findByDoctorId(doctorId);
+        log.debug("Fetching appointments for doctor ID: {}", doctorId);
+        List<Appointment> appointments = appointmentRepository.findByDoctorId(doctorId);
+        log.info("Found {} appointments for doctor {}", appointments.size(), doctorId);
+        return appointments;
     }
     
     /**
      * Cancel an appointment
      */
+    @Transactional
     public void cancelAppointment(String appointmentId) {
+        log.info("Cancelling appointment ID: {}", appointmentId);
+        
         Appointment appointment = appointmentRepository.findById(appointmentId)
-            .orElseThrow(() -> new RuntimeException("Appointment not found"));
+            .orElseThrow(() -> new AppointmentNotFoundException("Appointment not found with ID: " + appointmentId));
         
         // Only allow cancellation of scheduled appointments
         if (appointment.getStatus() != Appointment.AppointmentStatus.SCHEDULED) {
-            throw new RuntimeException("Only scheduled appointments can be cancelled");
+            log.warn("Attempt to cancel non-scheduled appointment: {}", appointmentId);
+            throw new BusinessLogicException("Only scheduled appointments can be cancelled");
         }
         
         // Check if appointment is in the future
         if (appointment.getAppointmentDateTime().isBefore(LocalDateTime.now())) {
-            throw new RuntimeException("Cannot cancel past appointments");
+            log.warn("Attempt to cancel past appointment: {}", appointmentId);
+            throw new BusinessLogicException("Cannot cancel past appointments");
         }
         
         appointment.setStatus(Appointment.AppointmentStatus.CANCELLED);
         appointment.setUpdatedAt(LocalDateTime.now());
         appointmentRepository.save(appointment);
+        
+        log.info("Successfully cancelled appointment ID: {}", appointmentId);
     }
     
     /**
      * Complete an appointment
      */
+    @Transactional
     public void completeAppointment(String appointmentId, String notes) {
+        log.info("Completing appointment ID: {}", appointmentId);
+        
         Appointment appointment = appointmentRepository.findById(appointmentId)
-            .orElseThrow(() -> new RuntimeException("Appointment not found"));
+            .orElseThrow(() -> new AppointmentNotFoundException("Appointment not found with ID: " + appointmentId));
         
         appointment.setStatus(Appointment.AppointmentStatus.COMPLETED);
         if (notes != null && !notes.isEmpty()) {
@@ -307,46 +349,61 @@ public class AppointmentService {
         }
         appointment.setUpdatedAt(LocalDateTime.now());
         appointmentRepository.save(appointment);
+        
+        log.info("Successfully completed appointment ID: {}", appointmentId);
     }
     
     /**
      * Mark appointment as no-show
      */
+    @Transactional
     public void markNoShow(String appointmentId) {
+        log.info("Marking appointment ID: {} as no-show", appointmentId);
+        
         Appointment appointment = appointmentRepository.findById(appointmentId)
-            .orElseThrow(() -> new RuntimeException("Appointment not found"));
+            .orElseThrow(() -> new AppointmentNotFoundException("Appointment not found with ID: " + appointmentId));
         
         appointment.setStatus(Appointment.AppointmentStatus.NO_SHOW);
         appointment.setUpdatedAt(LocalDateTime.now());
         appointmentRepository.save(appointment);
+        
+        log.info("Successfully marked appointment ID: {} as no-show", appointmentId);
     }
     
     /**
      * Get appointment by MongoDB ObjectId
      */
     public Optional<Appointment> getAppointmentById(String appointmentId) {
+        log.debug("Fetching appointment by ID: {}", appointmentId);
         return appointmentRepository.findById(appointmentId);
     }
     
     /**
      * Reschedule an appointment
      */
+    @Transactional
     public Appointment rescheduleAppointment(String appointmentId, LocalDateTime newDateTime) {
+        log.info("Rescheduling appointment ID: {} to {}", appointmentId, newDateTime);
+        
         Appointment appointment = appointmentRepository.findById(appointmentId)
-            .orElseThrow(() -> new RuntimeException("Appointment not found"));
+            .orElseThrow(() -> new AppointmentNotFoundException("Appointment not found with ID: " + appointmentId));
         
         // Check if the new time slot is available
         LocalDate newDate = newDateTime.toLocalDate();
         List<LocalTime> availableSlots = getAvailableTimeSlots(appointment.getDoctorId(), newDate);
         
         if (!availableSlots.contains(newDateTime.toLocalTime())) {
-            throw new RuntimeException("Selected time slot is not available");
+            log.warn("Selected time slot {} is not available for rescheduling", newDateTime);
+            throw new BusinessLogicException("Selected time slot is not available");
         }
         
         appointment.setAppointmentDateTime(newDateTime);
         appointment.setStatus(Appointment.AppointmentStatus.SCHEDULED);
         appointment.setUpdatedAt(LocalDateTime.now());
         
-        return appointmentRepository.save(appointment);
+        Appointment rescheduledAppointment = appointmentRepository.save(appointment);
+        log.info("Successfully rescheduled appointment ID: {} to {}", appointmentId, newDateTime);
+        
+        return rescheduledAppointment;
     }
 }

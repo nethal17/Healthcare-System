@@ -1,14 +1,19 @@
 package com.example.health_care_system.service;
 
-import com.example.health_care_system.model.*;
-import com.example.health_care_system.repository.*;
+import com.example.health_care_system.exception.ResourceNotFoundException;
+import com.example.health_care_system.factory.PaymentStrategyFactory;
+import com.example.health_care_system.model.Appointment;
+import com.example.health_care_system.model.Payment;
+import com.example.health_care_system.repository.PaymentRepository;
+import com.example.health_care_system.repository.AppointmentRepository;
+import com.example.health_care_system.strategy.PaymentContext;
+import com.example.health_care_system.strategy.PaymentStrategy;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -16,94 +21,172 @@ import static org.mockito.Mockito.*;
 
 class PaymentServiceTest {
 
-    @Mock
     private PaymentRepository paymentRepository;
-    @Mock
     private AppointmentRepository appointmentRepository;
-    @Mock
-    private DoctorRepository doctorRepository;
-    @Mock
-    private HospitalRepository hospitalRepository;
-    @Mock
-    private PatientRepository patientRepository;
+    private PaymentStrategyFactory paymentStrategyFactory;
 
-    private PaymentService service;
+    private PaymentService paymentService;
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
-        service = new PaymentService();
-        TestUtils.injectField(service, "paymentRepository", paymentRepository);
-        TestUtils.injectField(service, "appointmentRepository", appointmentRepository);
-        TestUtils.injectField(service, "doctorRepository", doctorRepository);
-        TestUtils.injectField(service, "hospitalRepository", hospitalRepository);
-        TestUtils.injectField(service, "patientRepository", patientRepository);
+        paymentRepository = mock(PaymentRepository.class);
+        appointmentRepository = mock(AppointmentRepository.class);
+        paymentStrategyFactory = mock(PaymentStrategyFactory.class);
+
+        paymentService = new PaymentService(paymentRepository, appointmentRepository, paymentStrategyFactory);
     }
 
     @Test
-    void createCardPayment_success() {
+    void createPayment_success_callsStrategyAndReturnsPayment() {
+        String appointmentId = "apt-1";
+        Payment.PaymentMethod method = Payment.PaymentMethod.CARD;
+        BigDecimal amount = new BigDecimal("123.45");
+
         Appointment apt = new Appointment();
-        apt.setId("a1");
-        apt.setPatientId("p1");
-        apt.setDoctorId("d1");
-        when(appointmentRepository.findById("a1")).thenReturn(Optional.of(apt));
+        apt.setId(appointmentId);
+        when(appointmentRepository.findById(appointmentId)).thenReturn(Optional.of(apt));
 
-        Patient p = new Patient(); p.setId("p1"); p.setName("P");
-        when(patientRepository.findById("p1")).thenReturn(Optional.of(p));
+        PaymentStrategy strategy = mock(PaymentStrategy.class);
+        when(paymentStrategyFactory.getStrategy(method)).thenReturn(strategy);
 
-        Doctor d = new Doctor(); d.setId("d1"); d.setName("Dr"); d.setHospitalId("h1"); d.setSpecialization("S");
-        when(doctorRepository.findById("d1")).thenReturn(Optional.of(d));
+        Payment created = new Payment();
+        created.setId("pay-1");
+        created.setAppointmentId(appointmentId);
+        created.setAmount(amount);
+        created.setPaymentMethod(method);
+        created.setStatus(Payment.PaymentStatus.COMPLETED);
 
-        Hospital h = new Hospital(); h.setId("h1"); h.setName("H");
-        when(hospitalRepository.findById("h1")).thenReturn(Optional.of(h));
+        when(strategy.createPayment(eq(appointmentId), eq(amount), any(PaymentContext.class))).thenReturn(created);
 
-        when(paymentRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+        Payment result = paymentService.createPayment(appointmentId, method, amount, new PaymentContext());
 
-        Payment payment = service.createCardPayment("a1", "txn1", new BigDecimal("1000"));
-        assertEquals(Payment.PaymentMethod.CARD, payment.getPaymentMethod());
-        assertEquals(Payment.PaymentStatus.COMPLETED, payment.getStatus());
-        assertEquals("txn1", payment.getTransactionId());
+        assertNotNull(result);
+        assertEquals("pay-1", result.getId());
+        assertEquals(appointmentId, result.getAppointmentId());
+        assertEquals(amount, result.getAmount());
+
+        verify(appointmentRepository).findById(appointmentId);
+        verify(paymentStrategyFactory).getStrategy(method);
+        verify(strategy).createPayment(eq(appointmentId), eq(amount), any(PaymentContext.class));
     }
 
     @Test
-    void createCashPayment_and_insurance_and_queries() {
-        Appointment apt = new Appointment(); apt.setId("a2"); apt.setPatientId("p2"); apt.setDoctorId("d2");
-        when(appointmentRepository.findById("a2")).thenReturn(Optional.of(apt));
-        Patient p = new Patient(); p.setId("p2"); p.setName("P2"); when(patientRepository.findById("p2")).thenReturn(Optional.of(p));
-        Doctor d = new Doctor(); d.setId("d2"); d.setName("Dr2"); d.setHospitalId("h2"); when(doctorRepository.findById("d2")).thenReturn(Optional.of(d));
-        Hospital h = new Hospital(); h.setId("h2"); h.setName("H2"); when(hospitalRepository.findById("h2")).thenReturn(Optional.of(h));
+    void createPayment_appointmentMissing_throwsResourceNotFoundException() {
+        String appointmentId = "missing";
+        when(appointmentRepository.findById(appointmentId)).thenReturn(Optional.empty());
 
-        when(paymentRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+        assertThrows(ResourceNotFoundException.class, () ->
+            paymentService.createPayment(appointmentId, Payment.PaymentMethod.CASH, BigDecimal.ZERO, new PaymentContext())
+        );
 
-        Payment cash = service.createCashPayment("a2", new BigDecimal("200"));
-        assertEquals(Payment.PaymentMethod.CASH, cash.getPaymentMethod());
-        assertEquals(Payment.PaymentStatus.PENDING, cash.getStatus());
-
-        Payment ins = service.createInsurancePayment("a2", new BigDecimal("300"), "InsCo", "POL1");
-        assertEquals(Payment.PaymentMethod.INSURANCE, ins.getPaymentMethod());
-        assertEquals("InsCo", ins.getInsuranceProvider());
-
-        when(paymentRepository.findByAppointmentId("a2")).thenReturn(Optional.of(ins));
-        assertTrue(service.getPaymentByAppointmentId("a2").isPresent());
-
-        when(paymentRepository.findByTransactionId("txnX")).thenReturn(Optional.empty());
-        assertTrue(service.getPaymentByTransactionId("txnX").isEmpty());
+        verify(appointmentRepository).findById(appointmentId);
+        verifyNoInteractions(paymentStrategyFactory);
     }
 
     @Test
-    void updatePaymentStatus_and_queriesByEntity() {
-        Payment p = new Payment(); p.setId("p1"); p.setStatus(Payment.PaymentStatus.PENDING);
-        when(paymentRepository.findById("p1")).thenReturn(Optional.of(p));
-        when(paymentRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+    void getPaymentByAppointmentId_delegatesToRepository() {
+        String appointmentId = "apt-2";
+        Payment p = new Payment(); p.setId("p2"); p.setAppointmentId(appointmentId);
+        when(paymentRepository.findByAppointmentId(appointmentId)).thenReturn(Optional.of(p));
 
-        Payment updated = service.updatePaymentStatus("p1", Payment.PaymentStatus.COMPLETED);
-        assertEquals(Payment.PaymentStatus.COMPLETED, updated.getStatus());
+        Optional<Payment> res = paymentService.getPaymentByAppointmentId(appointmentId);
+        assertTrue(res.isPresent());
+        assertEquals("p2", res.get().getId());
 
-        when(paymentRepository.findByHospitalId("h1")).thenReturn(java.util.List.of(updated));
-        assertEquals(1, service.getPaymentsByHospitalId("h1").size());
+        verify(paymentRepository).findByAppointmentId(appointmentId);
+    }
 
-        when(paymentRepository.findByDoctorId("d1")).thenReturn(java.util.List.of(updated));
-        assertEquals(1, service.getPaymentsByDoctorId("d1").size());
+    @Test
+    void getPaymentsByPatientId_delegatesToRepository() {
+        String patientId = "patient-1";
+        Payment p = new Payment(); p.setId("p3"); p.setPatientId(patientId);
+        when(paymentRepository.findByPatientId(patientId)).thenReturn(List.of(p));
+
+        List<Payment> res = paymentService.getPaymentsByPatientId(patientId);
+        assertNotNull(res);
+        assertEquals(1, res.size());
+        assertEquals("p3", res.get(0).getId());
+
+        verify(paymentRepository).findByPatientId(patientId);
+    }
+
+    @Test
+    void getPaymentByTransactionId_delegatesToRepository() {
+        String txn = "txn-1";
+        Payment p = new Payment(); p.setId("p4"); p.setTransactionId(txn);
+        when(paymentRepository.findByTransactionId(txn)).thenReturn(Optional.of(p));
+
+        Optional<Payment> res = paymentService.getPaymentByTransactionId(txn);
+        assertTrue(res.isPresent());
+        assertEquals("p4", res.get().getId());
+
+        verify(paymentRepository).findByTransactionId(txn);
+    }
+
+    @Test
+    void updatePaymentStatus_success_updatesAndSaves() {
+        String paymentId = "pay-2";
+        Payment existing = new Payment();
+        existing.setId(paymentId);
+        existing.setStatus(Payment.PaymentStatus.PENDING);
+        when(paymentRepository.findById(paymentId)).thenReturn(Optional.of(existing));
+
+        Payment saved = new Payment(); saved.setId(paymentId); saved.setStatus(Payment.PaymentStatus.COMPLETED);
+        when(paymentRepository.save(any(Payment.class))).thenReturn(saved);
+
+        Payment res = paymentService.updatePaymentStatus(paymentId, Payment.PaymentStatus.COMPLETED);
+        assertNotNull(res);
+        assertEquals(Payment.PaymentStatus.COMPLETED, res.getStatus());
+
+        verify(paymentRepository).findById(paymentId);
+        verify(paymentRepository).save(any(Payment.class));
+    }
+
+    @Test
+    void updatePaymentStatus_missing_throwsResourceNotFoundException() {
+        when(paymentRepository.findById("nope")).thenReturn(Optional.empty());
+        assertThrows(ResourceNotFoundException.class, () -> paymentService.updatePaymentStatus("nope", Payment.PaymentStatus.REFUNDED));
+        verify(paymentRepository).findById("nope");
+    }
+
+    @Test
+    void createPayment_nullStrategy_throws() {
+        String appointmentId = "apt-9";
+        when(appointmentRepository.findById(appointmentId)).thenReturn(Optional.of(new Appointment()));
+        when(paymentStrategyFactory.getStrategy(any())).thenReturn(null);
+
+        assertThrows(NullPointerException.class, () -> paymentService.createPayment(appointmentId, Payment.PaymentMethod.CARD, new java.math.BigDecimal("10"), new PaymentContext()));
+    }
+
+    @Test
+    void createPayment_nullAmount_throws() {
+        String appointmentId = "apt-10";
+        when(appointmentRepository.findById(appointmentId)).thenReturn(Optional.of(new Appointment()));
+        PaymentStrategy strategy = mock(PaymentStrategy.class);
+        when(paymentStrategyFactory.getStrategy(any())).thenReturn(strategy);
+
+        assertThrows(NullPointerException.class, () -> paymentService.createPayment(appointmentId, Payment.PaymentMethod.CASH, null, new PaymentContext()));
+    }
+
+    @Test
+    void getPaymentsByHospitalAndDoctor_delegatesToRepository() {
+        String hid = "h-1";
+        String did = "d-1";
+        Payment ph = new Payment(); ph.setId("ph");
+        Payment pd = new Payment(); pd.setId("pd");
+        when(paymentRepository.findByHospitalId(hid)).thenReturn(List.of(ph));
+        when(paymentRepository.findByDoctorId(did)).thenReturn(List.of(pd));
+
+        List<Payment> resH = paymentService.getPaymentsByHospitalId(hid);
+        List<Payment> resD = paymentService.getPaymentsByDoctorId(did);
+
+        assertEquals(1, resH.size());
+        assertEquals("ph", resH.get(0).getId());
+        assertEquals(1, resD.size());
+        assertEquals("pd", resD.get(0).getId());
+
+        verify(paymentRepository).findByHospitalId(hid);
+        verify(paymentRepository).findByDoctorId(did);
     }
 }
 

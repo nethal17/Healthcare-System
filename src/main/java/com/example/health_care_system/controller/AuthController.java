@@ -3,10 +3,15 @@ package com.example.health_care_system.controller;
 import com.example.health_care_system.dto.LoginRequest;
 import com.example.health_care_system.dto.RegisterRequest;
 import com.example.health_care_system.dto.UserDTO;
+import com.example.health_care_system.exception.AuthenticationException;
+import com.example.health_care_system.exception.DuplicateResourceException;
+import com.example.health_care_system.exception.ValidationException;
+import com.example.health_care_system.service.AuthenticationService;
 import com.example.health_care_system.service.UserService;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -15,11 +20,13 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+@Slf4j
 @Controller
 @RequiredArgsConstructor
 public class AuthController {
     
     private final UserService userService;
+    private final AuthenticationService authenticationService;
     
     @GetMapping("/register")
     public String showRegisterPage(Model model) {
@@ -38,9 +45,19 @@ public class AuthController {
         try {
             userService.registerPatient(request);
             redirectAttributes.addFlashAttribute("successMessage", "Registration successful! Please login.");
+            log.info("User registered successfully with email: {}", request.getEmail());
             return "redirect:/login";
-        } catch (Exception e) {
+        } catch (DuplicateResourceException e) {
+            log.warn("Registration failed - duplicate email: {}", request.getEmail());
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            return "redirect:/register";
+        } catch (ValidationException e) {
+            log.warn("Registration failed - validation error: {}", e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            return "redirect:/register";
+        } catch (Exception e) {
+            log.error("Unexpected error during registration", e);
+            redirectAttributes.addFlashAttribute("errorMessage", "An unexpected error occurred. Please try again.");
             return "redirect:/register";
         }
     }
@@ -65,11 +82,17 @@ public class AuthController {
         }
         
         try {
-            UserDTO user = userService.login(request);
+            UserDTO user = authenticationService.authenticate(request);
             session.setAttribute("user", user);
+            log.info("User logged in successfully: {}", user.getEmail());
             return "redirect:/dashboard";
-        } catch (Exception e) {
+        } catch (AuthenticationException e) {
+            log.warn("Authentication failed for email: {}", request.getEmail());
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            return "redirect:/login";
+        } catch (Exception e) {
+            log.error("Unexpected error during login", e);
+            redirectAttributes.addFlashAttribute("errorMessage", "An unexpected error occurred. Please try again.");
             return "redirect:/login";
         }
     }
