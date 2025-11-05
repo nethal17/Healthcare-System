@@ -252,11 +252,11 @@ Healthcare-System/
 
 **Repository**: [Healthcare-System](https://github.com/nethal17/Healthcare-System)
 
-## 📄 License
+## License
 
-This project is part of an academic/portfolio project.
+This project is part of an academic project of our CSSE Module(SE3070).
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - Spring Boot Framework
 - MongoDB Atlas
