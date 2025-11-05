@@ -39,7 +39,7 @@ public class ProfileController {
         updateRequest.setContactNumber(refreshedUser.getContactNumber());
         updateRequest.setGender(refreshedUser.getGender());
         updateRequest.setDateOfBirth(refreshedUser.getDateOfBirth());
-        updateRequest.setBloodGroup(refreshedUser.getBloodGroup());
+        updateRequest.setBloodType(refreshedUser.getBloodType());
         updateRequest.setAddress(refreshedUser.getAddress());
         
         model.addAttribute("updateRequest", updateRequest);
