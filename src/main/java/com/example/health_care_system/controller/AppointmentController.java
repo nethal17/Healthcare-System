@@ -947,6 +947,25 @@ public class AppointmentController {
     }
     
     /**
+     * AJAX endpoint: Get predicted delay (in minutes) for all slots for a doctor and date
+     */
+    @GetMapping("/predicted-delays")
+    @ResponseBody
+    public Map<String, Integer> getPredictedDelays(
+            @RequestParam String doctorId,
+            @RequestParam String date
+    ) {
+        LocalDate localDate = LocalDate.parse(date);
+        // Key format: "HH:mm", value: predicted delay (in minutes)
+        Map<LocalTime, Integer> prediction = appointmentService.getPredictedDelaysForSlots(doctorId, localDate);
+        Map<String, Integer> result = new HashMap<>();
+        for (Map.Entry<LocalTime, Integer> entry : prediction.entrySet()) {
+            result.put(entry.getKey().toString(), entry.getValue());
+        }
+        return result;
+    }
+    
+    /**
      * Download appointment confirmation PDF
      */
     @GetMapping("/download-confirmation/{appointmentId}")

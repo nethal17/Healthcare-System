@@ -1,12 +1,14 @@
 package com.example.health_care_system.model;
 
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
-@Document(collection = "analytics_reports")
+@Entity
+@Table(name = "analytics_reports")
 public class AnalyticsReport {
     
     @Id
@@ -17,6 +19,8 @@ public class AnalyticsReport {
     private LocalDateTime reportPeriodStart;
     private LocalDateTime reportPeriodEnd;
     private String generatedBy; // User ID who generated the report
+    @jakarta.persistence.Column(name = "report_data", columnDefinition = "text")
+    @jakarta.persistence.Convert(converter = ReportDataConverter.class)
     private ReportData reportData;
     
     // Enums

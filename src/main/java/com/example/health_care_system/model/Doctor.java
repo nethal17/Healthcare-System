@@ -4,8 +4,9 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import org.springframework.data.mongodb.core.mapping.DBRef;
-import org.springframework.data.mongodb.core.mapping.Document;
+import jakarta.persistence.DiscriminatorValue;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Transient;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,7 +15,8 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@Document(collection = "users")
+@Entity
+@DiscriminatorValue("DOCTOR")
 public class Doctor extends User {
     
     private String specialization;
@@ -23,10 +25,10 @@ public class Doctor extends User {
     private String hospitalId;
     
     // Reference to appointments (lazy loaded)
-    @DBRef(lazy = true)
+    @Transient
     private List<Appointment> appointments = new ArrayList<>();
     
     // Reference to medical records created by this doctor (lazy loaded)
-    @DBRef(lazy = true)
+    @Transient
     private List<MedicalRecord> medicalRecords = new ArrayList<>();
 }

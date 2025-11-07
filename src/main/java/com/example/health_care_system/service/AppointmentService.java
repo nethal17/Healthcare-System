@@ -349,4 +349,60 @@ public class AppointmentService {
         
         return appointmentRepository.save(appointment);
     }
+
+    /**
+     * Record the check-in time for an appointment
+     */
+    public void recordCheckIn(String appointmentId, LocalDateTime actualCheckInTime) {
+        Appointment appointment = appointmentRepository.findById(appointmentId)
+            .orElseThrow(() -> new RuntimeException("Appointment not found"));
+        appointment.setActualCheckInTime(actualCheckInTime);
+        appointment.setUpdatedAt(LocalDateTime.now());
+        appointmentRepository.save(appointment);
+    }
+
+    /**
+     * Record the check-out time for an appointment
+     */
+    public void recordCheckOut(String appointmentId, LocalDateTime actualCheckOutTime) {
+        Appointment appointment = appointmentRepository.findById(appointmentId)
+            .orElseThrow(() -> new RuntimeException("Appointment not found"));
+        appointment.setActualCheckOutTime(actualCheckOutTime);
+        appointment.setUpdatedAt(LocalDateTime.now());
+        appointmentRepository.save(appointment);
+    }
+
+    /**
+     * Get average delay (in minutes) for each slot for a given doctor and date based on past completed appointments (should exclude cancelled/no-shows)
+     * Returns: Map<LocalTime, Integer> where key is slot, value is average delay (in minutes)
+     */
+    public Map<LocalTime, Integer> getPredictedDelaysForSlots(String doctorId, LocalDate date) {
+        // Only consider completed appointments for this doctor in the past 30 days
+        LocalDateTime from = date.minusDays(30).atStartOfDay();
+        LocalDateTime to = date.atTime(23, 59, 59);
+
+        List<Appointment> appointments = appointmentRepository
+                .findByDoctorIdAndAppointmentDateTimeBetween(doctorId, from, to)
+                .stream()
+                .filter(apt -> apt.getStatus() == Appointment.AppointmentStatus.COMPLETED)
+                .filter(apt -> apt.getActualCheckInTime() != null)
+                .collect(Collectors.toList());
+
+        // Group by scheduled slot
+        Map<LocalTime, List<Integer>> delaysBySlot = new HashMap<>();
+        for (Appointment apt : appointments) {
+            LocalTime slot = apt.getAppointmentDateTime().toLocalTime();
+            int delay = (int) java.time.Duration.between(apt.getAppointmentDateTime(), apt.getActualCheckInTime()).toMinutes();
+            delaysBySlot.computeIfAbsent(slot, k -> new ArrayList<>()).add(delay);
+        }
+
+        // Calculate averages
+        Map<LocalTime, Integer> avgDelayBySlot = new HashMap<>();
+        for (Map.Entry<LocalTime, List<Integer>> entry : delaysBySlot.entrySet()) {
+            List<Integer> delays = entry.getValue();
+            int avg = delays.isEmpty() ? 0 : (int) Math.round(delays.stream().mapToInt(i -> i).average().orElse(0));
+            avgDelayBySlot.put(entry.getKey(), avg);
+        }
+        return avgDelayBySlot;
+    }
 }

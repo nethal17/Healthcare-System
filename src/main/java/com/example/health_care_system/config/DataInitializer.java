@@ -5,6 +5,7 @@ import com.example.health_care_system.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -27,6 +28,7 @@ public class DataInitializer {
     private final BCryptPasswordEncoder passwordEncoder;
     
     @Bean
+    @ConditionalOnProperty(name = "app.seeder.enabled", havingValue = "true", matchIfMissing = false)
     public CommandLineRunner initializeData() {
         return args -> {
             // Only initialize data if database is empty
