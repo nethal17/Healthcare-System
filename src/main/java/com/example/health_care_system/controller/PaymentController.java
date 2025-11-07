@@ -49,7 +49,17 @@ public class PaymentController {
     private final PdfGenerationService pdfGenerationService;
     private final EmailService emailService;
 
+<<<<<<< HEAD
     @GetMapping("/payment")
+=======
+    @Autowired
+    private PdfGenerationService pdfGenerationService;
+    
+    @Autowired
+    private EmailService emailService;
+
+    @GetMapping("/payments")
+>>>>>>> 3ed1ba1 (Refactor application to use JPA with PostgreSQL)
     public String index(){
         return "index";
     }

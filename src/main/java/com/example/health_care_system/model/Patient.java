@@ -4,8 +4,9 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import org.springframework.data.mongodb.core.mapping.DBRef;
-import org.springframework.data.mongodb.core.mapping.Document;
+import jakarta.persistence.DiscriminatorValue;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Transient;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -15,7 +16,8 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@Document(collection = "users")
+@Entity
+@DiscriminatorValue("PATIENT")
 public class Patient extends User {
     
     private LocalDate dateOfBirth;
@@ -26,16 +28,18 @@ public class Patient extends User {
     
     private boolean active = true;
     
-    private String qrCode; // Base64 encoded QR code image for patient identification
+    @jakarta.persistence.Column(name = "qr_code", columnDefinition = "text")
+    // Base64 encoded QR code image for patient identification (persisted as TEXT)
+    private String qrCode;
     
     // Reference to the hospital where this patient is registered
     private String hospitalId;
     
-    // Reference to medical records (lazy loaded)
-    @DBRef(lazy = true)
+    // Reference to medical records (lazy loaded) - keep transient for initial migration
+    @Transient
     private List<MedicalRecord> medicalRecords = new ArrayList<>();
     
     // Reference to appointments (lazy loaded)
-    @DBRef(lazy = true)
+    @Transient
     private List<Appointment> appointments = new ArrayList<>();
 }
