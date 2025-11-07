@@ -3,9 +3,15 @@ package com.example.health_care_system.model;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.DBRef;
-import org.springframework.data.mongodb.core.mapping.Document;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
+import jakarta.persistence.Embeddable;
+import jakarta.persistence.Embedded;
+import jakarta.persistence.GeneratedValue;
+
+import org.hibernate.annotations.GenericGenerator;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -15,29 +21,37 @@ import java.math.BigDecimal;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Document(collection = "hospitals")
+@Entity
+@Table(name = "hospitals")
 public class Hospital {
     
     @Id
+    @GeneratedValue(generator = "uuid2")
+    @GenericGenerator(name = "uuid2", strategy = "org.hibernate.id.UUIDGenerator")
     private String id;
     
     private String name;
     
+    private String managerId; // Reference to the Hospital Manager (User id)
+    
     private HospitalType type;
     
+    @Embedded
     private Location location;
     
+    @jakarta.persistence.Column(name = "contact_info", columnDefinition = "text")
+    @jakarta.persistence.Convert(converter = ContactInfoConverter.class)
     private ContactInfo contactInfo;
     
     // Fixed amount charge for this hospital. For GOVERNMENT type this should be zero.
     private BigDecimal hospitalCharges = BigDecimal.ZERO;
     
     // Reference to doctors working at this hospital (lazy loaded)
-    @DBRef(lazy = true)
+    @Transient
     private List<Doctor> doctors = new ArrayList<>();
     
     // Reference to patients registered at this hospital (lazy loaded)
-    @DBRef(lazy = true)
+    @Transient
     private List<Patient> patients = new ArrayList<>();
     
     private LocalDateTime createdAt;
@@ -54,6 +68,7 @@ public class Hospital {
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
+    @Embeddable
     public static class Location {
         private String address;
         private String city;

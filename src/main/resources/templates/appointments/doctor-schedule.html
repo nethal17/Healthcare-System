@@ -62,6 +62,15 @@
                     <h3 class="text-2xl font-bold text-gray-900" th:text="${doctor.name}">Dr. Name</h3>
                     <p class="text-gray-600" th:text="${doctor.specialization}">Specialization</p>
                 </div>
+                <div class="ml-auto">
+                    <!-- Use a plain form POST to avoid client-side Content-Type/body mismatches that can trigger 400 on some servlet containers -->
+                    <form class="arrived-form" th:action="@{/doctors/{id}/arrived/email(id=${doctor.id})}" method="post">
+                        <button type="submit" 
+                                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700">
+                            <i class="fas fa-bell mr-2"></i>Mark Arrived
+                        </button>
+                    </form>
+                </div>
             </div>
         </div>
 
@@ -166,6 +175,50 @@
                 </div>
             </div>
         </div>
+
+    <script>
+        async function markArrived(doctorId) {
+            try {
+                // Call the email-only endpoint using POST with no body and no Content-Type header
+                // This avoids Tomcat rejecting the request when Content-Type is present but
+                // the server method signature does not accept a body.
+                const resp = await fetch(`/doctors/${doctorId}/arrived/email`, {
+                    method: 'POST'
+                });
+                if (resp.ok) {
+                    alert('Email notifications queued for today\'s confirmed appointments');
+                } else {
+                    const text = await resp.text();
+                    alert('Failed to queue notifications: ' + text);
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Error sending arrival notification');
+            }
+        }
+    </script>
+
+    <script>
+        // Intercept plain form POSTs to keep the user on the same page
+        document.querySelectorAll('form.arrived-form').forEach(form => {
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const action = form.action;
+                try {
+                    const resp = await fetch(action, { method: 'POST' });
+                    if (resp.ok) {
+                        alert('Email notifications queued for today\'s appointments');
+                    } else {
+                        const text = await resp.text();
+                        alert('Failed to queue notifications: ' + text);
+                    }
+                } catch (err) {
+                    console.error(err);
+                    alert('Error sending arrival notification');
+                }
+            });
+        });
+    </script>
 
         <!-- No Appointments Message -->
         <div th:if="${appointments == null || appointments.isEmpty()}" 

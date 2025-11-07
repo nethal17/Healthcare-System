@@ -3,34 +3,35 @@ package com.example.health_care_system.model;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.index.CompoundIndex;
-import org.springframework.data.mongodb.core.mapping.Document;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import jakarta.persistence.Column;
+import jakarta.persistence.GeneratedValue;
+import org.hibernate.annotations.GenericGenerator;
 
 import java.time.LocalDateTime;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Document(collection = "appointments")
-@CompoundIndex(
-    name = "unique_scheduled_appointment_idx",
-    def = "{'doctorId': 1, 'appointmentDateTime': 1, 'status': 1}",
-    unique = true,
-    partialFilter = "{'status': 'SCHEDULED'}"
-)
+@Entity
+@Table(name = "appointments")
 public class Appointment {
     
     @Id
+    @GeneratedValue(generator = "UUID")
+    @GenericGenerator(name = "UUID", strategy = "org.hibernate.id.UUIDGenerator")
+    @Column(name = "id", updatable = false, nullable = false)
     private String id;
     
     private LocalDateTime appointmentDateTime;
     
-    private String patientId;  // References Patient.id (MongoDB ObjectId)
+    private String patientId;  // References Patient.id
     
     private String patientName;
     
-    private String doctorId;  // References Doctor.id (MongoDB ObjectId)
+    private String doctorId;  // References Doctor.id
     
     private String doctorName;
     
@@ -44,7 +45,11 @@ public class Appointment {
     
     private LocalDateTime updatedAt;
     
+    private LocalDateTime actualCheckInTime; // Set when patient checks in
+    private LocalDateTime actualCheckOutTime; // Set when patient leaves
+    
     public enum AppointmentStatus {
+        CONFIRMED,
         SCHEDULED,
         COMPLETED,
         CANCELLED,
