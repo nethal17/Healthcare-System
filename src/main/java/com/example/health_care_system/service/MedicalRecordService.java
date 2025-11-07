@@ -54,6 +54,10 @@ public class MedicalRecordService {
      */
     public MedicalRecord createMedicalRecord(MedicalRecord medicalRecord) {
         log.info("Creating new medical record for patient: {}", medicalRecord.getPatientName());
+        // Ensure an ID exists (entity uses manual id assignment)
+        if (medicalRecord.getId() == null || medicalRecord.getId().isBlank()) {
+            medicalRecord.setId(java.util.UUID.randomUUID().toString());
+        }
         medicalRecord.setCreatedAt(LocalDateTime.now());
         medicalRecord.setUpdatedAt(LocalDateTime.now());
         return medicalRecordRepository.save(medicalRecord);

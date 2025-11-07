@@ -74,14 +74,61 @@
             </div>
         </div>
 
-        <!-- Appointments List -->
-        <div th:if="${appointments != null && !appointments.isEmpty()}" class="space-y-4">
-            <div class="bg-white rounded-lg shadow-md p-6 mb-4">
-                <h3 class="text-xl font-bold text-gray-900 mb-2">
-                    <i class="fas fa-calendar-check mr-2 text-blue-500"></i>
-                    Total Appointments: <span th:text="${appointments.size()}">0</span>
-                </h3>
+        <!-- Today Dashboard & Sequential Workflow -->
+        <div class="space-y-4">
+            <div class="bg-white rounded-lg shadow-md p-6 mb-4 flex items-center justify-between">
+                <div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-1">
+                        <i class="fas fa-sun mr-2 text-yellow-500"></i>
+                        Today's Appointments: <span id="today-count">0</span>
+                    </h3>
+                    <p class="text-sm text-gray-600">Appointments scheduled for today</p>
+                </div>
+                <div>
+                    <button id="start-workflow" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700">
+                        <i class="fas fa-play mr-2"></i>Start In-Clinic Flow
+                    </button>
+                </div>
             </div>
+
+            <!-- Sequential Appointment Card (hidden until started) -->
+            <div id="workflow-container" style="display:none;" class="bg-white rounded-2xl shadow-lg p-6">
+                <div id="current-index" class="text-sm text-gray-500 mb-2">Showing <span id="current-pos">0</span> of <span id="total-pos">0</span></div>
+                <div id="current-card" class="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+                    <!-- Left: patient & time -->
+                    <div class="col-span-2 bg-gray-50 rounded-lg p-6">
+                        <h2 id="card-patient" class="text-2xl font-bold text-gray-900">Patient Name</h2>
+                        <p id="card-time" class="text-gray-600 mt-2">Date / Time</p>
+                        <div id="card-purpose" class="mt-4 bg-white p-4 rounded border border-gray-100">
+                            <h4 class="text-sm font-semibold text-gray-500">Purpose</h4>
+                            <p id="card-purpose-text" class="text-gray-900 mt-2">-</p>
+                        </div>
+                        <div id="card-notes" class="mt-4">
+                            <h4 class="text-sm font-semibold text-gray-500">Patient Notes</h4>
+                            <p id="card-notes-text" class="text-gray-900 mt-2">-</p>
+                        </div>
+                    </div>
+
+                    <!-- Right: actions -->
+                    <div class="col-span-1">
+                        <div class="space-y-3">
+                            <button id="scan-qr" class="w-full inline-flex items-center justify-center px-4 py-3 bg-yellow-500 text-white rounded-md">Scan QR</button>
+                            <button id="create-record" class="w-full inline-flex items-center justify-center px-4 py-3 bg-green-600 text-white rounded-md">Create Medical Record</button>
+                            <button id="view-records" class="w-full inline-flex items-center justify-center px-4 py-3 bg-blue-600 text-white rounded-md">View Records</button>
+                            <button id="complete-appointment" class="w-full inline-flex items-center justify-center px-4 py-3 bg-gray-800 text-white rounded-md">Complete & Next</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Server-side appointment list (kept for reference / fallback) -->
+            <div id="server-appointments" th:if="${appointments != null && !appointments.isEmpty()}" class="space-y-4">
+                <div class="bg-white rounded-lg shadow-md p-6 mb-4">
+                    <h3 class="text-xl font-bold text-gray-900 mb-2">
+                        <i class="fas fa-calendar-check mr-2 text-blue-500"></i>
+                        Total Appointments: <span th:text="${appointments.size()}">0</span>
+                    </h3>
+                </div>
 
             <!-- Appointment Cards -->
             <div th:each="appointment : ${appointments}" 
@@ -196,6 +243,156 @@
                 alert('Error sending arrival notification');
             }
         }
+    </script>
+
+    <script>
+        // Workflow client: fetch today's appointments and present them one-by-one
+        (function(){
+            let appointments = [];
+            let currentIndex = 0;
+
+            function isoToLocal(iso) {
+                // appointmentDateTime comes as ISO string via JSON; convert to readable
+                try {
+                    const d = new Date(iso);
+                    return d.toLocaleString();
+                } catch(e) { return iso; }
+            }
+
+            async function loadAppointments(doctorId) {
+                const resp = await fetch(`/debug/doctors/${doctorId}/appointments/today/all`);
+                if (!resp.ok) {
+                    alert('Failed to load today\'s appointments');
+                    return [];
+                }
+                const list = await resp.json();
+                // filter SCHEDULED or CONFIRMED, sort by appointmentDateTime
+                const filtered = list.filter(a => a.status === 'SCHEDULED' || a.status === 'CONFIRMED')
+                    .sort((a,b)=> new Date(a.appointmentDateTime) - new Date(b.appointmentDateTime));
+                return filtered;
+            }
+
+            function renderCurrent() {
+                const total = appointments.length;
+                document.getElementById('today-count').textContent = total;
+                document.getElementById('total-pos').textContent = total;
+                if (total === 0) {
+                    document.getElementById('workflow-container').style.display = 'none';
+                    return;
+                }
+                const appt = appointments[currentIndex];
+                document.getElementById('workflow-container').style.display = 'block';
+                document.getElementById('current-pos').textContent = (currentIndex+1);
+                document.getElementById('card-patient').textContent = appt.patientName || 'Patient';
+                document.getElementById('card-time').textContent = isoToLocal(appt.appointmentDateTime);
+                document.getElementById('card-purpose-text').textContent = appt.purpose || '-';
+                document.getElementById('card-notes-text').textContent = appt.notes || '-';
+                // attach data-id for actions
+                document.getElementById('create-record').dataset.appointmentId = appt.id;
+                document.getElementById('create-record').dataset.patientId = appt.patientId;
+                document.getElementById('view-records').dataset.patientId = appt.patientId;
+                document.getElementById('scan-qr').dataset.patientId = appt.patientId;
+                document.getElementById('complete-appointment').dataset.appointmentId = appt.id;
+            }
+
+            async function startFlow(doctorId) {
+                appointments = await loadAppointments(doctorId);
+                currentIndex = 0;
+                document.getElementById('server-appointments').style.display = 'none';
+                renderCurrent();
+            }
+
+            document.getElementById('start-workflow').addEventListener('click', async (e) => {
+                const doctorId = /*[[${doctor.id}]]*/ '';
+                // Thymeleaf will render the doctor id into the page; fallback to button form action
+                const idFromAttr = document.querySelector('form.arrived-form')?.action?.split('/').slice(-2)[0];
+                const id = doctorId || idFromAttr;
+                await startFlow(id);
+            });
+
+            // Wire existing Mark Arrived to also start the flow after successful POST
+            document.querySelectorAll('form.arrived-form').forEach(form => {
+                form.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const action = form.action;
+                    try {
+                        const resp = await fetch(action, { method: 'POST' });
+                        if (resp.ok) {
+                            alert('Email notifications queued for today\'s appointments');
+                            // start the in-clinic workflow
+                            const doctorId = action.split('/').slice(-3)[0];
+                            await startFlow(doctorId);
+                        } else {
+                            const text = await resp.text();
+                            alert('Failed to queue notifications: ' + text);
+                        }
+                    } catch (err) {
+                        console.error(err);
+                        alert('Error sending arrival notification');
+                    }
+                });
+            });
+
+            // Scan QR: open QR scanner page in new tab
+            document.getElementById('scan-qr').addEventListener('click', (e) => {
+                window.open('/medical-records/doctor/qr-scanner', '_blank');
+            });
+
+            // Create medical record via prompt (quick UI). Uses existing /medical-records/create endpoint
+            document.getElementById('create-record').addEventListener('click', async (e) => {
+                const apptId = e.currentTarget.dataset.appointmentId;
+                const patientId = e.currentTarget.dataset.patientId;
+                if (!patientId) { alert('No patient information'); return; }
+                const diagnosis = prompt('Enter diagnosis');
+                if (!diagnosis) { alert('Diagnosis required'); return; }
+                const prescription = prompt('Enter prescription');
+                if (!prescription) { alert('Prescription required'); return; }
+                const notes = prompt('Notes (optional)');
+                try {
+                    const resp = await fetch('/medical-records/create', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ patientId, diagnosis, prescription, notes })
+                    });
+                    const body = await resp.json();
+                    if (resp.ok && body.success) {
+                        alert('Medical record created');
+                    } else {
+                        alert('Failed to create medical record: ' + (body.message || JSON.stringify(body)));
+                    }
+                } catch (err) { console.error(err); alert('Error creating medical record'); }
+            });
+
+            // View records: open medical records page
+            document.getElementById('view-records').addEventListener('click', (e) => {
+                const pid = e.currentTarget.dataset.patientId;
+                // Open medical records page; doctor can search or we can filter if later
+                window.open('/medical-records', '_blank');
+            });
+
+            // Complete appointment and advance
+            document.getElementById('complete-appointment').addEventListener('click', async (e) => {
+                const apptId = e.currentTarget.dataset.appointmentId;
+                if (!apptId) { alert('No appointment selected'); return; }
+                try {
+                    const resp = await fetch(`/debug/appointments/${apptId}/complete`, { method: 'POST' });
+                    if (!resp.ok) {
+                        const txt = await resp.text();
+                        alert('Failed to complete appointment: ' + txt);
+                        return;
+                    }
+                    // advance to next
+                    currentIndex++;
+                    if (currentIndex >= appointments.length) {
+                        alert('All appointments completed for today');
+                        document.getElementById('workflow-container').style.display = 'none';
+                        document.getElementById('server-appointments').style.display = 'block';
+                    } else {
+                        renderCurrent();
+                    }
+                } catch (err) { console.error(err); alert('Error completing appointment'); }
+            });
+        })();
     </script>
 
     <script>
