@@ -1,7 +1,7 @@
 package com.example.health_care_system.repository;
 
 import com.example.health_care_system.model.AnalyticsReport;
-import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface AnalyticsReportRepository extends MongoRepository<AnalyticsReport, String> {
+public interface AnalyticsReportRepository extends JpaRepository<AnalyticsReport, String> {
     
     // Find by report ID
     Optional<AnalyticsReport> findByReportId(String reportId);
