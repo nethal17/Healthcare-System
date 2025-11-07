@@ -3,9 +3,12 @@ package com.example.health_care_system.model;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.index.CompoundIndex;
-import org.springframework.data.mongodb.core.mapping.Document;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import jakarta.persistence.Column;
+import jakarta.persistence.GeneratedValue;
+import org.hibernate.annotations.GenericGenerator;
 
 import java.time.LocalDateTime;
 
@@ -16,16 +19,14 @@ import java.time.LocalDateTime;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Document(collection = "time_slot_reservations")
-@CompoundIndex(
-    name = "unique_active_slot_idx",
-    def = "{'doctorId': 1, 'slotDateTime': 1, 'status': 1}",
-    unique = true,
-    partialFilter = "{'status': 'ACTIVE'}"
-)
+@Entity
+@Table(name = "time_slot_reservations")
 public class TimeSlotReservation {
     
     @Id
+    @GeneratedValue(generator = "UUID")
+    @GenericGenerator(name = "UUID", strategy = "org.hibernate.id.UUIDGenerator")
+    @Column(name = "id", updatable = false, nullable = false)
     private String id;
     
     private String doctorId;
